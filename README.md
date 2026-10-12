@@ -1,6 +1,6 @@
-# x.y - Template
+# M.2 - Microelectronic Technologies
 
-Repository for "Template".
+Repository for "Microelectronic Technologies".
 
 
 ## Use instructions
