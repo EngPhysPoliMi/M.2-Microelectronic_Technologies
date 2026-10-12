@@ -1,0 +1,1474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tube Flow Development Visualization</title>
+    <style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    min-height: 100vh;
+    color: #e0e0e0;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+header h1 {
+    font-size: 1.8rem;
+    color: #4fc3f7;
+    margin-bottom: 5px;
+}
+
+header .subtitle {
+    font-size: 0.95rem;
+    color: #90a4ae;
+}
+
+.main-content {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.control-panel {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 20px;
+    width: 280px;
+    flex-shrink: 0;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.control-panel h2 {
+    font-size: 1.1rem;
+    color: #4fc3f7;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.control-group {
+    margin-bottom: 15px;
+}
+
+.control-group label {
+    display: block;
+    font-size: 0.85rem;
+    color: #b0bec5;
+    margin-bottom: 6px;
+}
+
+.slider-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+input[type="range"] {
+    flex: 1;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #4fc3f7;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: #4fc3f7;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+}
+
+.value-display {
+    font-size: 0.8rem;
+    color: #4fc3f7;
+    min-width: 80px;
+    text-align: right;
+    font-family: 'Consolas', 'Monaco', monospace;
+}
+
+.divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 15px 0;
+}
+
+.info-panel {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.info-row:last-child {
+    margin-bottom: 0;
+}
+
+.info-label {
+    font-size: 0.8rem;
+    color: #90a4ae;
+}
+
+.info-value {
+    font-size: 0.85rem;
+    color: #4fc3f7;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-weight: 600;
+}
+
+#flow-status.developing {
+    color: #ffb74d;
+}
+
+#flow-status.developed {
+    color: #81c784;
+}
+
+#flow-regime.laminar {
+    color: #81c784;
+}
+
+#flow-regime.transitional {
+    color: #ffb74d;
+}
+
+#flow-regime.turbulent {
+    color: #e57373;
+}
+
+.btn {
+    width: 100%;
+    padding: 10px;
+    background: #4fc3f7;
+    color: #1a1a2e;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    margin-top: 10px;
+}
+
+.btn:hover {
+    background: #81d4fa;
+    transform: translateY(-1px);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.visualization-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.canvas-container {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    padding: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#main-canvas {
+    width: 100%;
+    height: 300px;
+    display: block;
+    border-radius: 8px;
+}
+
+.profile-container {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    padding: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#profile-canvas {
+    width: 100%;
+    height: 200px;
+    display: block;
+    border-radius: 8px;
+}
+
+footer {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.legend {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: #90a4ae;
+}
+
+.color-box {
+    width: 20px;
+    height: 12px;
+    border-radius: 2px;
+}
+
+.color-box.slow {
+    background: linear-gradient(90deg, #1565c0, #42a5f5);
+}
+
+.color-box.fast {
+    background: linear-gradient(90deg, #ff7043, #ffca28);
+}
+
+@media (max-width: 900px) {
+    .main-content {
+        flex-direction: column;
+    }
+
+    .control-panel {
+        width: 100%;
+    }
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Velocity Profile Development in Tube Flow</h1>
+            <p class="subtitle">From Plug Flow to Parabolic (Hagen-Poiseuille) Profile</p>
+        </header>
+
+        <div class="main-content">
+            <aside class="control-panel">
+                <h2>Parameters</h2>
+
+                <div class="control-group">
+                    <label for="diameter">Tube Diameter</label>
+                    <div class="slider-container">
+                        <input type="range" id="diameter" min="1" max="1000" value="10" step="1">
+                        <span class="value-display"><span id="diameter-value">10</span> mm</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label for="density">Gas Density</label>
+                    <div class="slider-container">
+                        <input type="range" id="density" min="0.1" max="5" value="1.2" step="0.1">
+                        <span class="value-display"><span id="density-value">1.2</span> kg/m³</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label for="viscosity">Dynamic Viscosity</label>
+                    <div class="slider-container">
+                        <input type="range" id="viscosity" min="1" max="50" value="18" step="0.5">
+                        <span class="value-display"><span id="viscosity-value">1.8</span> × 10⁻⁵ Pa·s</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label for="length">Tube Length</label>
+                    <div class="slider-container">
+                        <input type="range" id="length" min="0.1" max="2" value="0.5" step="0.05">
+                        <span class="value-display"><span id="length-value">0.5</span> m</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label for="velocity">Inlet Velocity</label>
+                    <div class="slider-container">
+                        <input type="range" id="velocity" min="0.01" max="0.5" value="0.1" step="0.01">
+                        <span class="value-display"><span id="velocity-value">0.10</span> m/s</span>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="info-panel">
+                    <div class="info-row">
+                        <span class="info-label">Reynolds Number:</span>
+                        <span class="info-value" id="reynolds-value">67</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Entrance Length:</span>
+                        <span class="info-value" id="entrance-length-value">0.033 m</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Flow Regime:</span>
+                        <span class="info-value" id="flow-regime">Laminar</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Status at Exit:</span>
+                        <span class="info-value" id="flow-status">Developing</span>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="control-group">
+                    <label for="marker-position">Profile Position</label>
+                    <div class="slider-container">
+                        <input type="range" id="marker-position" min="0" max="100" value="50" step="1">
+                        <span class="value-display"><span id="marker-position-value">50</span>%</span>
+                    </div>
+                </div>
+
+                <button id="reset-btn" class="btn">Reset to Defaults</button>
+            </aside>
+
+            <main class="visualization-area">
+                <div class="canvas-container">
+                    <canvas id="main-canvas"></canvas>
+                </div>
+                <div class="profile-container">
+                    <canvas id="profile-canvas"></canvas>
+                </div>
+            </main>
+        </div>
+
+        <footer>
+            <div class="legend">
+                <span class="legend-item"><span class="color-box slow"></span> Low velocity (boundary layer)</span>
+                <span class="legend-item"><span class="color-box fast"></span> High velocity (core flow)</span>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+/**
+ * Physics simulation for tube flow development
+ * Models the transition from plug flow to parabolic (Hagen-Poiseuille) profile
+ */
+
+class FlowSimulation {
+    constructor() {
+        // Default parameters
+        this.params = {
+            diameter: 0.01,      // m (10 mm)
+            density: 1.2,        // kg/m³
+            viscosity: 1.8e-5,   // Pa·s
+            length: 0.5,         // m
+            velocity: 0.1        // m/s (average inlet velocity)
+        };
+
+        this.updateDerivedQuantities();
+    }
+
+    /**
+     * Update parameters and recalculate derived quantities
+     */
+    setParams(params) {
+        Object.assign(this.params, params);
+        this.updateDerivedQuantities();
+    }
+
+    /**
+     * Calculate Reynolds number, entrance length, etc.
+     */
+    updateDerivedQuantities() {
+        const { diameter, density, viscosity, velocity, length } = this.params;
+
+        // Reynolds number: Re = ρVD/μ
+        this.reynolds = (density * velocity * diameter) / viscosity;
+
+        // Entrance length for laminar flow: Le ≈ 0.05 * Re * D
+        // For turbulent flow: Le ≈ 4.4 * Re^(1/6) * D
+        if (this.reynolds < 2300) {
+            this.entranceLength = 0.05 * this.reynolds * diameter;
+        } else {
+            this.entranceLength = 4.4 * Math.pow(this.reynolds, 1/6) * diameter;
+        }
+
+        // Kinematic viscosity
+        this.nu = viscosity / density;
+
+        // Radius
+        this.radius = diameter / 2;
+
+        // Check if flow is fully developed at tube exit
+        this.isFullyDeveloped = length >= this.entranceLength;
+    }
+
+    /**
+     * Get flow regime based on Reynolds number
+     */
+    getFlowRegime() {
+        if (this.reynolds < 2300) {
+            return 'laminar';
+        } else if (this.reynolds < 4000) {
+            return 'transitional';
+        } else {
+            return 'turbulent';
+        }
+    }
+
+    /**
+     * Calculate boundary layer thickness at position x
+     * Using simplified Blasius solution adapted for pipe flow
+     */
+    getBoundaryLayerThickness(x) {
+        if (x <= 0) return 0;
+
+        const { velocity } = this.params;
+
+        // Blasius boundary layer: δ ≈ 5 * sqrt(νx/U)
+        // Modified for pipe flow with factor adjustment
+        const delta = 5.0 * Math.sqrt(this.nu * x / velocity);
+
+        // Cannot exceed radius
+        return Math.min(delta, this.radius);
+    }
+
+    /**
+     * Calculate the development factor (0 = plug, 1 = fully parabolic)
+     * Based on position along the tube
+     */
+    getDevelopmentFactor(x) {
+        if (x <= 0) return 0;
+        if (x >= this.entranceLength) return 1;
+
+        // Smooth transition using boundary layer growth
+        // Factor based on how much of the radius is affected by boundary layer
+        const delta = this.getBoundaryLayerThickness(x);
+        const factor = delta / this.radius;
+
+        // Use a smoother transition function
+        // This gives a more gradual development
+        return Math.min(1, Math.pow(factor, 0.7));
+    }
+
+    /**
+     * Calculate velocity at radial position r for axial position x
+     * @param x - axial position (m)
+     * @param r - radial position from center (m), 0 = center, R = wall
+     * @returns velocity at that point (m/s)
+     */
+    getVelocityAt(x, r) {
+        const { velocity } = this.params;
+        const R = this.radius;
+
+        // Clamp r to valid range
+        r = Math.abs(r);
+        if (r >= R) return 0;
+
+        // Development factor
+        const f = this.getDevelopmentFactor(x);
+
+        // Plug flow velocity (uniform)
+        const u_plug = velocity;
+
+        // Parabolic profile: u(r) = 2 * U_avg * (1 - (r/R)²)
+        // Centerline velocity is 2x average velocity
+        const u_parabolic = 2 * velocity * (1 - Math.pow(r / R, 2));
+
+        // Developing flow model:
+        // Near entrance: plug flow in core, boundary layer near wall
+        // Further downstream: smooth transition to parabolic
+
+        const delta = this.getBoundaryLayerThickness(x);
+        const r_core = R - delta; // Core radius (unaffected by viscosity)
+
+        if (f >= 0.99) {
+            // Fully developed - pure parabolic
+            return u_parabolic;
+        } else if (r <= r_core && r_core > 0) {
+            // In the inviscid core - accelerated plug flow
+            // Core velocity must increase to conserve mass as boundary layer grows
+            // Conservation: U_avg * π * R² = U_core * π * r_core² + integral of BL velocity
+            // Simplified: core accelerates as boundary layer grows
+            const coreVelocity = velocity * (R * R) / (r_core * r_core + (R * R - r_core * r_core) * 0.5);
+            return Math.min(coreVelocity, 2 * velocity); // Cap at max parabolic centerline
+        } else {
+            // In boundary layer - blend between linear BL profile and parabolic
+            const r_normalized = (r - r_core) / delta; // 0 at core edge, 1 at wall
+
+            if (delta <= 0 || r_core >= R) {
+                return u_plug;
+            }
+
+            // Boundary layer velocity profile (approximately linear to 7th power)
+            const coreVelocity = velocity * (R * R) / (r_core * r_core + (R * R - r_core * r_core) * 0.5);
+            const u_bl = coreVelocity * Math.pow(1 - r_normalized, 1/7);
+
+            // Blend with parabolic as we approach fully developed
+            return u_bl * (1 - f) + u_parabolic * f;
+        }
+    }
+
+    /**
+     * Get velocity profile at axial position x
+     * Returns array of {r, u} points
+     */
+    getVelocityProfile(x, numPoints = 50) {
+        const profile = [];
+        const R = this.radius;
+
+        for (let i = 0; i <= numPoints; i++) {
+            const r = (i / numPoints) * R;
+            const u = this.getVelocityAt(x, r);
+            profile.push({ r, u });
+        }
+
+        return profile;
+    }
+
+    /**
+     * Get maximum velocity (centerline) at position x
+     */
+    getMaxVelocity(x) {
+        return this.getVelocityAt(x, 0);
+    }
+
+    /**
+     * Get average velocity (should be constant = inlet velocity)
+     */
+    getAverageVelocity() {
+        return this.params.velocity;
+    }
+
+    /**
+     * Get parameters for display
+     */
+    getDisplayInfo() {
+        return {
+            reynolds: this.reynolds,
+            entranceLength: this.entranceLength,
+            flowRegime: this.getFlowRegime(),
+            isFullyDeveloped: this.isFullyDeveloped,
+            tubeLength: this.params.length
+        };
+    }
+}
+
+/**
+ * Canvas renderer for flow visualization
+ */
+
+class FlowRenderer {
+    constructor(mainCanvas, profileCanvas, simulation) {
+        this.mainCanvas = mainCanvas;
+        this.profileCanvas = profileCanvas;
+        this.mainCtx = mainCanvas.getContext('2d');
+        this.profileCtx = profileCanvas.getContext('2d');
+        this.simulation = simulation;
+
+        // Particle system for flow visualization
+        this.particles = [];
+        this.maxParticles = 200;
+
+        // Marker position (0-1 along tube)
+        this.markerPosition = 0.5;
+
+        // Colors
+        this.colors = {
+            background: '#0d1117',
+            tube: '#2d333b',
+            tubeWall: '#4fc3f7',
+            grid: 'rgba(79, 195, 247, 0.1)',
+            text: '#e0e0e0',
+            marker: '#ff7043',
+            profile: '#4fc3f7',
+            profileFill: 'rgba(79, 195, 247, 0.2)'
+        };
+
+        this.initParticles();
+        this.resize();
+    }
+
+    /**
+     * Handle canvas resize
+     */
+    resize() {
+        // Main canvas
+        const mainRect = this.mainCanvas.parentElement.getBoundingClientRect();
+        this.mainCanvas.width = mainRect.width - 30;
+        this.mainCanvas.height = 300;
+
+        // Profile canvas
+        const profileRect = this.profileCanvas.parentElement.getBoundingClientRect();
+        this.profileCanvas.width = profileRect.width - 30;
+        this.profileCanvas.height = 200;
+
+        // Calculate tube drawing dimensions
+        this.tubeMargin = { left: 60, right: 40, top: 50, bottom: 50 };
+        this.tubeWidth = this.mainCanvas.width - this.tubeMargin.left - this.tubeMargin.right;
+        this.tubeHeight = this.mainCanvas.height - this.tubeMargin.top - this.tubeMargin.bottom;
+    }
+
+    /**
+     * Initialize particle system
+     * Ensures some particles are at walls to demonstrate no-slip condition
+     */
+    initParticles() {
+        this.particles = [];
+
+        // Place ~15% of particles at the walls to show no-slip boundary condition
+        const wallParticles = Math.floor(this.maxParticles * 0.15);
+
+        // Wall particles (stationary due to no-slip)
+        for (let i = 0; i < wallParticles; i++) {
+            const atTopWall = i % 2 === 0;
+            this.particles.push({
+                xNorm: Math.random(),
+                rNorm: atTopWall ? 0.98 + Math.random() * 0.02 : -(0.98 + Math.random() * 0.02)
+            });
+        }
+
+        // Rest of particles distributed in the flow
+        for (let i = wallParticles; i < this.maxParticles; i++) {
+            this.particles.push(this.createParticle());
+        }
+    }
+
+    /**
+     * Create a new particle at random position
+     * Radial position stored as normalized value (-1 to +1) to be independent of tube diameter
+     * ~15% chance to spawn at wall to maintain visible no-slip condition
+     */
+    createParticle(atInlet = false) {
+        // 15% chance to spawn at wall (no-slip boundary)
+        if (Math.random() < 0.15) {
+            const atTopWall = Math.random() < 0.5;
+            return {
+                xNorm: atInlet ? 0 : Math.random(),
+                rNorm: atTopWall ? 0.98 + Math.random() * 0.02 : -(0.98 + Math.random() * 0.02)
+            };
+        }
+
+        // Random radial position (uniform distribution in area)
+        // Use sqrt for uniform area distribution, result is 0 to 1
+        const rNorm = Math.sqrt(Math.random()) * 0.95; // Cap at 0.95 to separate from wall particles
+        const sign = Math.random() < 0.5 ? 1 : -1;
+
+        return {
+            xNorm: atInlet ? 0 : Math.random(), // Normalized x position (0-1 of tube length)
+            rNorm: rNorm * sign // Normalized radial position (-1 to +1, where 1 = wall)
+        };
+    }
+
+    /**
+     * Update particle positions
+     */
+    updateParticles(dt) {
+        const L = this.simulation.params.length;
+        const R = this.simulation.radius;
+
+        for (let i = 0; i < this.particles.length; i++) {
+            const p = this.particles[i];
+
+            // Convert normalized positions to absolute for velocity calculation
+            const x = p.xNorm * L;
+            const r = p.rNorm * R;
+
+            // Get local velocity
+            const velocity = this.simulation.getVelocityAt(x, r);
+
+            // Move particle (update normalized x position)
+            p.xNorm += (velocity * dt) / L;
+
+            // Respawn at inlet if past outlet
+            if (p.xNorm > 1) {
+                this.particles[i] = this.createParticle(true);
+            }
+        }
+    }
+
+    /**
+     * Get color for velocity value
+     */
+    getVelocityColor(velocity, maxVelocity) {
+        const ratio = velocity / maxVelocity;
+
+        // Color gradient: blue (slow) -> cyan -> yellow -> orange (fast)
+        if (ratio < 0.25) {
+            const t = ratio / 0.25;
+            return `rgb(${Math.round(21 + t * 24)}, ${Math.round(101 + t * 64)}, ${Math.round(192 - t * 27)})`;
+        } else if (ratio < 0.5) {
+            const t = (ratio - 0.25) / 0.25;
+            return `rgb(${Math.round(45 + t * 21)}, ${Math.round(165 + t * 45)}, ${Math.round(165 - t * 20)})`;
+        } else if (ratio < 0.75) {
+            const t = (ratio - 0.5) / 0.25;
+            return `rgb(${Math.round(66 + t * 189)}, ${Math.round(210 - t * 8)}, ${Math.round(145 - t * 105)})`;
+        } else {
+            const t = (ratio - 0.75) / 0.25;
+            return `rgb(${Math.round(255)}, ${Math.round(202 - t * 90)}, ${Math.round(40 - t * 10)})`;
+        }
+    }
+
+    /**
+     * Render the main flow visualization
+     */
+    renderMain() {
+        const ctx = this.mainCtx;
+        const width = this.mainCanvas.width;
+        const height = this.mainCanvas.height;
+
+        // Clear canvas
+        ctx.fillStyle = this.colors.background;
+        ctx.fillRect(0, 0, width, height);
+
+        // Draw tube
+        this.drawTube(ctx);
+
+        // Draw velocity field
+        this.drawVelocityField(ctx);
+
+        // Draw particles
+        this.drawParticles(ctx);
+
+        // Draw boundary layer visualization
+        this.drawBoundaryLayer(ctx);
+
+        // Draw marker
+        this.drawMarker(ctx);
+
+        // Draw labels
+        this.drawLabels(ctx);
+    }
+
+    /**
+     * Draw the tube walls
+     */
+    drawTube(ctx) {
+        const { left, top } = this.tubeMargin;
+
+        // Tube body (darker interior)
+        ctx.fillStyle = this.colors.tube;
+        ctx.fillRect(left, top, this.tubeWidth, this.tubeHeight);
+
+        // Tube walls
+        ctx.strokeStyle = this.colors.tubeWall;
+        ctx.lineWidth = 3;
+
+        // Top wall
+        ctx.beginPath();
+        ctx.moveTo(left, top);
+        ctx.lineTo(left + this.tubeWidth, top);
+        ctx.stroke();
+
+        // Bottom wall
+        ctx.beginPath();
+        ctx.moveTo(left, top + this.tubeHeight);
+        ctx.lineTo(left + this.tubeWidth, top + this.tubeHeight);
+        ctx.stroke();
+
+        // Inlet
+        ctx.beginPath();
+        ctx.moveTo(left, top);
+        ctx.lineTo(left, top + this.tubeHeight);
+        ctx.stroke();
+
+        // Outlet
+        ctx.beginPath();
+        ctx.moveTo(left + this.tubeWidth, top);
+        ctx.lineTo(left + this.tubeWidth, top + this.tubeHeight);
+        ctx.stroke();
+    }
+
+    /**
+     * Draw velocity vectors/arrows
+     */
+    drawVelocityField(ctx) {
+        const { left, top } = this.tubeMargin;
+        const L = this.simulation.params.length;
+        const R = this.simulation.radius;
+        const maxVel = 2 * this.simulation.params.velocity;
+
+        const numX = 15;
+        const numY = 9;
+
+        for (let i = 0; i <= numX; i++) {
+            const xFrac = i / numX;
+            const x = xFrac * L;
+            const screenX = left + xFrac * this.tubeWidth;
+
+            for (let j = 0; j <= numY; j++) {
+                const yFrac = j / numY;
+                const r = (yFrac - 0.5) * 2 * R; // -R to +R
+                const screenY = top + yFrac * this.tubeHeight;
+
+                const velocity = this.simulation.getVelocityAt(x, r);
+                const color = this.getVelocityColor(velocity, maxVel);
+
+                // Arrow length proportional to velocity
+                const arrowLength = (velocity / maxVel) * (this.tubeWidth / numX) * 0.8;
+
+                // Draw arrow
+                ctx.strokeStyle = color;
+                ctx.fillStyle = color;
+                ctx.lineWidth = 2;
+
+                ctx.beginPath();
+                ctx.moveTo(screenX, screenY);
+                ctx.lineTo(screenX + arrowLength, screenY);
+                ctx.stroke();
+
+                // Arrow head
+                if (arrowLength > 5) {
+                    ctx.beginPath();
+                    ctx.moveTo(screenX + arrowLength, screenY);
+                    ctx.lineTo(screenX + arrowLength - 5, screenY - 3);
+                    ctx.lineTo(screenX + arrowLength - 5, screenY + 3);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            }
+        }
+    }
+
+    /**
+     * Draw flow particles
+     */
+    drawParticles(ctx) {
+        const { left, top } = this.tubeMargin;
+        const L = this.simulation.params.length;
+        const R = this.simulation.radius;
+        const maxVel = 2 * this.simulation.params.velocity;
+
+        for (const p of this.particles) {
+            // Use normalized positions for screen coordinates
+            const screenX = left + p.xNorm * this.tubeWidth;
+            const screenY = top + (0.5 + p.rNorm / 2) * this.tubeHeight;
+
+            // Convert to absolute for velocity calculation
+            const x = p.xNorm * L;
+            const r = p.rNorm * R;
+            const velocity = this.simulation.getVelocityAt(x, r);
+            const color = this.getVelocityColor(velocity, maxVel);
+
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, 3, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+        }
+    }
+
+    /**
+     * Draw boundary layer visualization
+     */
+    drawBoundaryLayer(ctx) {
+        const { left, top } = this.tubeMargin;
+        const L = this.simulation.params.length;
+        const R = this.simulation.radius;
+
+        // Draw boundary layer edge lines
+        ctx.strokeStyle = 'rgba(255, 112, 67, 0.5)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+
+        // Top boundary layer
+        ctx.beginPath();
+        for (let i = 0; i <= 50; i++) {
+            const xFrac = i / 50;
+            const x = xFrac * L;
+            const delta = this.simulation.getBoundaryLayerThickness(x);
+            const screenX = left + xFrac * this.tubeWidth;
+            const screenY = top + (delta / (2 * R)) * this.tubeHeight;
+
+            if (i === 0) {
+                ctx.moveTo(screenX, screenY);
+            } else {
+                ctx.lineTo(screenX, screenY);
+            }
+        }
+        ctx.stroke();
+
+        // Bottom boundary layer
+        ctx.beginPath();
+        for (let i = 0; i <= 50; i++) {
+            const xFrac = i / 50;
+            const x = xFrac * L;
+            const delta = this.simulation.getBoundaryLayerThickness(x);
+            const screenX = left + xFrac * this.tubeWidth;
+            const screenY = top + this.tubeHeight - (delta / (2 * R)) * this.tubeHeight;
+
+            if (i === 0) {
+                ctx.moveTo(screenX, screenY);
+            } else {
+                ctx.lineTo(screenX, screenY);
+            }
+        }
+        ctx.stroke();
+
+        ctx.setLineDash([]);
+    }
+
+    /**
+     * Draw position marker
+     */
+    drawMarker(ctx) {
+        const { left, top } = this.tubeMargin;
+        const screenX = left + this.markerPosition * this.tubeWidth;
+
+        // Vertical line
+        ctx.strokeStyle = this.colors.marker;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(screenX, top - 10);
+        ctx.lineTo(screenX, top + this.tubeHeight + 10);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Triangle indicator at top
+        ctx.fillStyle = this.colors.marker;
+        ctx.beginPath();
+        ctx.moveTo(screenX, top - 10);
+        ctx.lineTo(screenX - 6, top - 20);
+        ctx.lineTo(screenX + 6, top - 20);
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    /**
+     * Draw axis labels
+     */
+    drawLabels(ctx) {
+        const { left, top } = this.tubeMargin;
+        const L = this.simulation.params.length;
+        const entranceLength = this.simulation.entranceLength;
+
+        ctx.fillStyle = this.colors.text;
+        ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+
+        // Inlet label
+        ctx.textAlign = 'center';
+        ctx.fillText('Inlet', left, top + this.tubeHeight + 25);
+        ctx.fillText('(Plug Flow)', left, top + this.tubeHeight + 40);
+
+        // Outlet label
+        ctx.fillText('Outlet', left + this.tubeWidth, top + this.tubeHeight + 25);
+
+        // Entrance length marker (if within tube)
+        if (entranceLength < L) {
+            const entranceX = left + (entranceLength / L) * this.tubeWidth;
+
+            ctx.strokeStyle = '#81c784';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([3, 3]);
+            ctx.beginPath();
+            ctx.moveTo(entranceX, top);
+            ctx.lineTo(entranceX, top + this.tubeHeight);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = '#81c784';
+            ctx.textAlign = 'center';
+            ctx.fillText('Le', entranceX, top - 10);
+            ctx.fillText('(Fully Developed)', entranceX, top - 25);
+        }
+
+        // X-axis label
+        ctx.fillStyle = this.colors.text;
+        ctx.textAlign = 'center';
+        ctx.fillText(`Length: ${L.toFixed(2)} m`, left + this.tubeWidth / 2, top + this.tubeHeight + 45);
+
+        // Y-axis label
+        ctx.save();
+        ctx.translate(left - 35, top + this.tubeHeight / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.textAlign = 'center';
+        ctx.fillText('Radial Position', 0, 0);
+        ctx.restore();
+    }
+
+    /**
+     * Render the velocity profile plot
+     */
+    renderProfile() {
+        const ctx = this.profileCtx;
+        const width = this.profileCanvas.width;
+        const height = this.profileCanvas.height;
+
+        // Clear canvas
+        ctx.fillStyle = this.colors.background;
+        ctx.fillRect(0, 0, width, height);
+
+        const margin = { left: 70, right: 30, top: 30, bottom: 50 };
+        const plotWidth = width - margin.left - margin.right;
+        const plotHeight = height - margin.top - margin.bottom;
+
+        // Get profile at marker position
+        const x = this.markerPosition * this.simulation.params.length;
+        const profile = this.simulation.getVelocityProfile(x, 100);
+        const R = this.simulation.radius;
+        const maxVel = 2.2 * this.simulation.params.velocity;
+
+        // Draw grid
+        ctx.strokeStyle = this.colors.grid;
+        ctx.lineWidth = 1;
+
+        // Vertical grid lines
+        for (let i = 0; i <= 5; i++) {
+            const gx = margin.left + (i / 5) * plotWidth;
+            ctx.beginPath();
+            ctx.moveTo(gx, margin.top);
+            ctx.lineTo(gx, margin.top + plotHeight);
+            ctx.stroke();
+        }
+
+        // Horizontal grid lines
+        for (let i = 0; i <= 4; i++) {
+            const gy = margin.top + (i / 4) * plotHeight;
+            ctx.beginPath();
+            ctx.moveTo(margin.left, gy);
+            ctx.lineTo(margin.left + plotWidth, gy);
+            ctx.stroke();
+        }
+
+        // Draw axes
+        ctx.strokeStyle = this.colors.tubeWall;
+        ctx.lineWidth = 2;
+
+        // Y-axis
+        ctx.beginPath();
+        ctx.moveTo(margin.left, margin.top);
+        ctx.lineTo(margin.left, margin.top + plotHeight);
+        ctx.stroke();
+
+        // X-axis (center)
+        ctx.beginPath();
+        ctx.moveTo(margin.left, margin.top + plotHeight / 2);
+        ctx.lineTo(margin.left + plotWidth, margin.top + plotHeight / 2);
+        ctx.stroke();
+
+        // Draw plug flow reference (dashed)
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 5]);
+        const plugX = margin.left + (this.simulation.params.velocity / maxVel) * plotWidth;
+        ctx.beginPath();
+        ctx.moveTo(plugX, margin.top);
+        ctx.lineTo(plugX, margin.top + plotHeight);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Draw parabolic reference (dashed)
+        ctx.strokeStyle = 'rgba(129, 199, 132, 0.5)';
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        for (let i = 0; i <= 100; i++) {
+            const r = ((i / 100) - 0.5) * 2 * R;
+            const u_parabolic = 2 * this.simulation.params.velocity * (1 - Math.pow(r / R, 2));
+            const screenX = margin.left + (u_parabolic / maxVel) * plotWidth;
+            const screenY = margin.top + (i / 100) * plotHeight;
+
+            if (i === 0) {
+                ctx.moveTo(screenX, screenY);
+            } else {
+                ctx.lineTo(screenX, screenY);
+            }
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Draw current profile (filled)
+        ctx.fillStyle = this.colors.profileFill;
+        ctx.beginPath();
+        ctx.moveTo(margin.left, margin.top);
+
+        // Top half (positive r)
+        for (let i = profile.length - 1; i >= 0; i--) {
+            const point = profile[i];
+            const screenX = margin.left + (point.u / maxVel) * plotWidth;
+            const screenY = margin.top + (0.5 - point.r / (2 * R)) * plotHeight;
+            ctx.lineTo(screenX, screenY);
+        }
+
+        // Bottom half (negative r)
+        for (let i = 0; i < profile.length; i++) {
+            const point = profile[i];
+            const screenX = margin.left + (point.u / maxVel) * plotWidth;
+            const screenY = margin.top + (0.5 + point.r / (2 * R)) * plotHeight;
+            ctx.lineTo(screenX, screenY);
+        }
+
+        ctx.closePath();
+        ctx.fill();
+
+        // Draw profile line
+        ctx.strokeStyle = this.colors.profile;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+
+        // Top half
+        for (let i = profile.length - 1; i >= 0; i--) {
+            const point = profile[i];
+            const screenX = margin.left + (point.u / maxVel) * plotWidth;
+            const screenY = margin.top + (0.5 - point.r / (2 * R)) * plotHeight;
+
+            if (i === profile.length - 1) {
+                ctx.moveTo(screenX, screenY);
+            } else {
+                ctx.lineTo(screenX, screenY);
+            }
+        }
+
+        // Continue to bottom half
+        for (let i = 0; i < profile.length; i++) {
+            const point = profile[i];
+            const screenX = margin.left + (point.u / maxVel) * plotWidth;
+            const screenY = margin.top + (0.5 + point.r / (2 * R)) * plotHeight;
+            ctx.lineTo(screenX, screenY);
+        }
+
+        ctx.stroke();
+
+        // Draw labels
+        ctx.fillStyle = this.colors.text;
+        ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+
+        // Title
+        ctx.textAlign = 'center';
+        const positionM = x.toFixed(3);
+        const positionPercent = (this.markerPosition * 100).toFixed(0);
+        ctx.fillText(`Velocity Profile at x = ${positionM} m (${positionPercent}% of tube)`, width / 2, 18);
+
+        // X-axis labels
+        ctx.textAlign = 'center';
+        ctx.fillText('Velocity (m/s)', margin.left + plotWidth / 2, height - 10);
+
+        // X-axis ticks
+        for (let i = 0; i <= 5; i++) {
+            const vel = (i / 5) * maxVel;
+            const gx = margin.left + (i / 5) * plotWidth;
+            ctx.fillText(vel.toFixed(1), gx, margin.top + plotHeight + 15);
+        }
+
+        // Y-axis label
+        ctx.save();
+        ctx.translate(15, margin.top + plotHeight / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.textAlign = 'center';
+        ctx.fillText('Radial Position r/R', 0, 0);
+        ctx.restore();
+
+        // Y-axis ticks
+        ctx.textAlign = 'right';
+        ctx.fillText('+R (wall)', margin.left - 5, margin.top + 5);
+        ctx.fillText('0 (center)', margin.left - 5, margin.top + plotHeight / 2 + 4);
+        ctx.fillText('-R (wall)', margin.left - 5, margin.top + plotHeight);
+
+        // Legend
+        ctx.textAlign = 'left';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.fillRect(width - 120, margin.top, 10, 2);
+        ctx.fillStyle = this.colors.text;
+        ctx.fillText('Plug flow', width - 105, margin.top + 5);
+
+        ctx.fillStyle = 'rgba(129, 199, 132, 0.5)';
+        ctx.fillRect(width - 120, margin.top + 15, 10, 2);
+        ctx.fillStyle = this.colors.text;
+        ctx.fillText('Parabolic', width - 105, margin.top + 20);
+
+        ctx.fillStyle = this.colors.profile;
+        ctx.fillRect(width - 120, margin.top + 30, 10, 2);
+        ctx.fillStyle = this.colors.text;
+        ctx.fillText('Current', width - 105, margin.top + 35);
+    }
+
+    /**
+     * Set marker position (0-1)
+     */
+    setMarkerPosition(position) {
+        this.markerPosition = Math.max(0, Math.min(1, position));
+    }
+
+    /**
+     * Main render loop
+     */
+    render() {
+        this.renderMain();
+        this.renderProfile();
+    }
+}
+
+/**
+ * Main application logic
+ * Handles controls, animation loop, and coordination
+ */
+
+class FlowApp {
+    constructor() {
+        // Initialize simulation
+        this.simulation = new FlowSimulation();
+
+        // Get canvas elements
+        this.mainCanvas = document.getElementById('main-canvas');
+        this.profileCanvas = document.getElementById('profile-canvas');
+
+        // Initialize renderer
+        this.renderer = new FlowRenderer(this.mainCanvas, this.profileCanvas, this.simulation);
+
+        // Animation state
+        this.isRunning = true;
+        this.lastTime = 0;
+        this.timeScale = 1.0; // Simulation speed multiplier
+
+        // Bind methods
+        this.animate = this.animate.bind(this);
+        this.handleResize = this.handleResize.bind(this);
+
+        // Setup
+        this.setupControls();
+        this.setupEventListeners();
+        this.updateDisplay();
+
+        // Start animation
+        requestAnimationFrame(this.animate);
+    }
+
+    /**
+     * Setup control event handlers
+     */
+    setupControls() {
+        // Diameter control
+        const diameterSlider = document.getElementById('diameter');
+        const diameterValue = document.getElementById('diameter-value');
+        diameterSlider.addEventListener('input', () => {
+            const value = parseFloat(diameterSlider.value);
+            // Show integer for values >= 10mm, one decimal for smaller
+            diameterValue.textContent = value >= 10 ? value.toFixed(0) : value.toFixed(1);
+            this.simulation.setParams({ diameter: value / 1000 }); // Convert mm to m
+            this.updateDisplay();
+        });
+
+        // Density control
+        const densitySlider = document.getElementById('density');
+        const densityValue = document.getElementById('density-value');
+        densitySlider.addEventListener('input', () => {
+            const value = parseFloat(densitySlider.value);
+            densityValue.textContent = value.toFixed(1);
+            this.simulation.setParams({ density: value });
+            this.updateDisplay();
+        });
+
+        // Viscosity control (stored as multiplier of 10^-5)
+        const viscositySlider = document.getElementById('viscosity');
+        const viscosityValue = document.getElementById('viscosity-value');
+        viscositySlider.addEventListener('input', () => {
+            const value = parseFloat(viscositySlider.value);
+            viscosityValue.textContent = (value / 10).toFixed(1);
+            this.simulation.setParams({ viscosity: value * 1e-6 }); // Convert to Pa·s
+            this.updateDisplay();
+        });
+
+        // Length control
+        const lengthSlider = document.getElementById('length');
+        const lengthValue = document.getElementById('length-value');
+        lengthSlider.addEventListener('input', () => {
+            const value = parseFloat(lengthSlider.value);
+            lengthValue.textContent = value.toFixed(2);
+            this.simulation.setParams({ length: value });
+            this.renderer.initParticles(); // Reset particles for new tube length
+            this.updateDisplay();
+        });
+
+        // Velocity control
+        const velocitySlider = document.getElementById('velocity');
+        const velocityValue = document.getElementById('velocity-value');
+        velocitySlider.addEventListener('input', () => {
+            const value = parseFloat(velocitySlider.value);
+            velocityValue.textContent = value.toFixed(2);
+            this.simulation.setParams({ velocity: value });
+            this.updateDisplay();
+        });
+
+        // Marker position control
+        const markerSlider = document.getElementById('marker-position');
+        const markerValue = document.getElementById('marker-position-value');
+        markerSlider.addEventListener('input', () => {
+            const value = parseFloat(markerSlider.value);
+            markerValue.textContent = value.toFixed(0);
+            this.renderer.setMarkerPosition(value / 100);
+        });
+
+        // Reset button
+        const resetBtn = document.getElementById('reset-btn');
+        resetBtn.addEventListener('click', () => {
+            this.resetToDefaults();
+        });
+    }
+
+    /**
+     * Setup window event listeners
+     */
+    setupEventListeners() {
+        window.addEventListener('resize', this.handleResize);
+
+        // Handle visibility change (pause when tab hidden)
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                this.isRunning = false;
+            } else {
+                this.isRunning = true;
+                this.lastTime = 0;
+                requestAnimationFrame(this.animate);
+            }
+        });
+    }
+
+    /**
+     * Handle window resize
+     */
+    handleResize() {
+        this.renderer.resize();
+    }
+
+    /**
+     * Update display values
+     */
+    updateDisplay() {
+        const info = this.simulation.getDisplayInfo();
+
+        // Reynolds number
+        const reynoldsEl = document.getElementById('reynolds-value');
+        reynoldsEl.textContent = info.reynolds.toFixed(0);
+
+        // Entrance length
+        const entranceEl = document.getElementById('entrance-length-value');
+        if (info.entranceLength < 0.001) {
+            entranceEl.textContent = (info.entranceLength * 1000).toFixed(2) + ' mm';
+        } else if (info.entranceLength > 10) {
+            entranceEl.textContent = info.entranceLength.toFixed(1) + ' m';
+        } else {
+            entranceEl.textContent = info.entranceLength.toFixed(3) + ' m';
+        }
+
+        // Flow regime
+        const regimeEl = document.getElementById('flow-regime');
+        regimeEl.textContent = info.flowRegime.charAt(0).toUpperCase() + info.flowRegime.slice(1);
+        regimeEl.className = 'info-value ' + info.flowRegime;
+
+        // Flow status
+        const statusEl = document.getElementById('flow-status');
+        if (info.isFullyDeveloped) {
+            statusEl.textContent = 'Fully Developed';
+            statusEl.className = 'info-value developed';
+        } else {
+            statusEl.textContent = 'Developing';
+            statusEl.className = 'info-value developing';
+        }
+    }
+
+    /**
+     * Reset all controls to default values
+     */
+    resetToDefaults() {
+        // Reset simulation
+        this.simulation.setParams({
+            diameter: 0.01,
+            density: 1.2,
+            viscosity: 1.8e-5,
+            length: 0.5,
+            velocity: 0.1
+        });
+
+        // Reset slider values
+        document.getElementById('diameter').value = 10;
+        document.getElementById('diameter-value').textContent = '10';
+
+        document.getElementById('density').value = 1.2;
+        document.getElementById('density-value').textContent = '1.2';
+
+        document.getElementById('viscosity').value = 18;
+        document.getElementById('viscosity-value').textContent = '1.8';
+
+        document.getElementById('length').value = 0.5;
+        document.getElementById('length-value').textContent = '0.50';
+
+        document.getElementById('velocity').value = 0.1;
+        document.getElementById('velocity-value').textContent = '0.10';
+
+        document.getElementById('marker-position').value = 50;
+        document.getElementById('marker-position-value').textContent = '50';
+
+        // Reset renderer
+        this.renderer.setMarkerPosition(0.5);
+        this.renderer.initParticles();
+
+        // Update display
+        this.updateDisplay();
+    }
+
+    /**
+     * Animation loop
+     */
+    animate(currentTime) {
+        if (!this.isRunning) return;
+
+        // Calculate delta time
+        if (this.lastTime === 0) {
+            this.lastTime = currentTime;
+        }
+        const dt = Math.min((currentTime - this.lastTime) / 1000, 0.05) * this.timeScale;
+        this.lastTime = currentTime;
+
+        // Update particles
+        this.renderer.updateParticles(dt);
+
+        // Render
+        this.renderer.render();
+
+        // Continue animation
+        requestAnimationFrame(this.animate);
+    }
+}
+
+// Initialize app when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    window.app = new FlowApp();
+});
+    </script>
+</body>
+</html>

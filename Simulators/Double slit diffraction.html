@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Double-Slit Fraunhofer Diffraction</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #eee;
+        }
+        h1 {
+            text-align: center;
+            color: #fff;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 20px;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .controls {
+            flex: 1;
+            min-width: 280px;
+            background: #16213e;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .visualization {
+            flex: 2;
+            min-width: 400px;
+        }
+        .control-group {
+            margin-bottom: 20px;
+        }
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #4cc9f0;
+        }
+        .control-group input[type="range"] {
+            width: 100%;
+            margin-bottom: 5px;
+        }
+        .value-display {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9em;
+            color: #aaa;
+        }
+        .current-value {
+            color: #f72585;
+            font-weight: bold;
+        }
+        canvas {
+            display: block;
+            background: #000;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .canvas-label {
+            text-align: center;
+            color: #888;
+            font-size: 0.85em;
+            margin-bottom: 15px;
+        }
+        .slit-diagram {
+            background: #16213e;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+        .slit-diagram h3 {
+            margin: 0 0 10px 0;
+            color: #4cc9f0;
+            font-size: 0.95em;
+        }
+        .formula {
+            background: #0f0f23;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            line-height: 1.6;
+        }
+        .formula-title {
+            color: #4cc9f0;
+            margin-bottom: 10px;
+            font-family: 'Segoe UI', sans-serif;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Double-Slit Fraunhofer Diffraction</h1>
+    <p class="subtitle">Interactive visualization of far-field interference pattern</p>
+
+    <div class="container">
+        <div class="controls">
+            <div class="control-group">
+                <label>Wavelength (λ)</label>
+                <input type="range" id="wavelength" min="380" max="700" value="550" step="1">
+                <div class="value-display">
+                    <span>380 nm</span>
+                    <span class="current-value" id="wavelength-value">550 nm</span>
+                    <span>700 nm</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Slit Width (a)</label>
+                <input type="range" id="slit-width" min="0.5" max="20" value="5" step="0.1">
+                <div class="value-display">
+                    <span>0.5 μm</span>
+                    <span class="current-value" id="slit-width-value">5.0 μm</span>
+                    <span>20 μm</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Slit Separation (d)</label>
+                <input type="range" id="slit-distance" min="5" max="100" value="25" step="0.5">
+                <div class="value-display">
+                    <span>5 μm</span>
+                    <span class="current-value" id="slit-distance-value">25.0 μm</span>
+                    <span>100 μm</span>
+                </div>
+            </div>
+
+            <div class="slit-diagram">
+                <h3>Slit Geometry (side view)</h3>
+                <canvas id="slitCanvas" width="240" height="80"></canvas>
+            </div>
+
+            <div class="formula">
+                <div class="formula-title">Intensity Formula:</div>
+                I(θ) = I₀ · cos²(πd·sinθ/λ) · sinc²(πa·sinθ/λ)
+                <br><br>
+                <span style="color:#888">where sinc(x) = sin(x)/x</span>
+                <br><br>
+                <span style="color:#4cc9f0">• cos² term:</span> two-slit interference
+                <br>
+                <span style="color:#f72585">• sinc² term:</span> single-slit envelope
+            </div>
+        </div>
+
+        <div class="visualization">
+            <canvas id="patternCanvas" width="600" height="150"></canvas>
+            <p class="canvas-label">Diffraction pattern on screen (intensity mapped to brightness)</p>
+
+            <canvas id="graphCanvas" width="600" height="300"></canvas>
+            <p class="canvas-label">Intensity vs. Position — <span style="color:#4cc9f0">Blue: Combined</span> | <span style="color:#888">Gray: Envelope (single-slit)</span></p>
+        </div>
+    </div>
+
+    <script>
+        // Canvas contexts
+        const patternCanvas = document.getElementById('patternCanvas');
+        const patternCtx = patternCanvas.getContext('2d');
+        const graphCanvas = document.getElementById('graphCanvas');
+        const graphCtx = graphCanvas.getContext('2d');
+        const slitCanvas = document.getElementById('slitCanvas');
+        const slitCtx = slitCanvas.getContext('2d');
+
+        // Controls
+        const wavelengthSlider = document.getElementById('wavelength');
+        const slitWidthSlider = document.getElementById('slit-width');
+        const slitDistanceSlider = document.getElementById('slit-distance');
+
+        // Convert wavelength (nm) to RGB color
+        function wavelengthToRGB(wavelength) {
+            let r, g, b;
+
+            if (wavelength >= 380 && wavelength < 440) {
+                r = -(wavelength - 440) / (440 - 380);
+                g = 0;
+                b = 1;
+            } else if (wavelength >= 440 && wavelength < 490) {
+                r = 0;
+                g = (wavelength - 440) / (490 - 440);
+                b = 1;
+            } else if (wavelength >= 490 && wavelength < 510) {
+                r = 0;
+                g = 1;
+                b = -(wavelength - 510) / (510 - 490);
+            } else if (wavelength >= 510 && wavelength < 580) {
+                r = (wavelength - 510) / (580 - 510);
+                g = 1;
+                b = 0;
+            } else if (wavelength >= 580 && wavelength < 645) {
+                r = 1;
+                g = -(wavelength - 645) / (645 - 580);
+                b = 0;
+            } else if (wavelength >= 645 && wavelength <= 700) {
+                r = 1;
+                g = 0;
+                b = 0;
+            } else {
+                r = 0;
+                g = 0;
+                b = 0;
+            }
+
+            // Intensity adjustment at edges of visible spectrum
+            let factor;
+            if (wavelength >= 380 && wavelength < 420) {
+                factor = 0.3 + 0.7 * (wavelength - 380) / (420 - 380);
+            } else if (wavelength >= 420 && wavelength <= 680) {
+                factor = 1;
+            } else if (wavelength > 680 && wavelength <= 700) {
+                factor = 0.3 + 0.7 * (700 - wavelength) / (700 - 680);
+            } else {
+                factor = 0;
+            }
+
+            return {
+                r: Math.round(255 * r * factor),
+                g: Math.round(255 * g * factor),
+                b: Math.round(255 * b * factor)
+            };
+        }
+
+        // Sinc function: sin(x)/x, with sinc(0) = 1
+        function sinc(x) {
+            if (Math.abs(x) < 1e-10) return 1;
+            return Math.sin(x) / x;
+        }
+
+        // Calculate intensity at angle theta
+        function intensity(theta, wavelength_nm, slitWidth_um, slitDistance_um) {
+            // Convert to consistent units (micrometers)
+            const lambda = wavelength_nm / 1000; // nm to μm
+            const a = slitWidth_um;
+            const d = slitDistance_um;
+
+            const sinTheta = Math.sin(theta);
+
+            // Single-slit diffraction envelope (sinc²)
+            const beta = Math.PI * a * sinTheta / lambda;
+            const singleSlit = sinc(beta) ** 2;
+
+            // Two-slit interference (cos²)
+            const delta = Math.PI * d * sinTheta / lambda;
+            const twoSlit = Math.cos(delta) ** 2;
+
+            return singleSlit * twoSlit;
+        }
+
+        // Calculate just the envelope (single-slit diffraction)
+        function envelope(theta, wavelength_nm, slitWidth_um) {
+            const lambda = wavelength_nm / 1000;
+            const a = slitWidth_um;
+            const sinTheta = Math.sin(theta);
+            const beta = Math.PI * a * sinTheta / lambda;
+            return sinc(beta) ** 2;
+        }
+
+        // Draw the diffraction pattern
+        function drawPattern() {
+            const wavelength = parseFloat(wavelengthSlider.value);
+            const slitWidth = parseFloat(slitWidthSlider.value);
+            const slitDistance = parseFloat(slitDistanceSlider.value);
+
+            const rgb = wavelengthToRGB(wavelength);
+            const width = patternCanvas.width;
+            const height = patternCanvas.height;
+
+            // Clear canvas
+            patternCtx.fillStyle = '#000';
+            patternCtx.fillRect(0, 0, width, height);
+
+            // Maximum angle to display (in radians)
+            const maxAngle = 0.15;
+
+            // Draw intensity pattern
+            const imageData = patternCtx.createImageData(width, height);
+
+            for (let x = 0; x < width; x++) {
+                // Map x position to angle
+                const theta = (x / width - 0.5) * 2 * maxAngle;
+                const I = intensity(theta, wavelength, slitWidth, slitDistance);
+
+                // Apply gamma correction for better visualization
+                const brightness = Math.pow(I, 0.5);
+
+                for (let y = 0; y < height; y++) {
+                    const idx = (y * width + x) * 4;
+                    imageData.data[idx] = rgb.r * brightness;
+                    imageData.data[idx + 1] = rgb.g * brightness;
+                    imageData.data[idx + 2] = rgb.b * brightness;
+                    imageData.data[idx + 3] = 255;
+                }
+            }
+
+            patternCtx.putImageData(imageData, 0, 0);
+        }
+
+        // Draw the intensity graph
+        function drawGraph() {
+            const wavelength = parseFloat(wavelengthSlider.value);
+            const slitWidth = parseFloat(slitWidthSlider.value);
+            const slitDistance = parseFloat(slitDistanceSlider.value);
+
+            const width = graphCanvas.width;
+            const height = graphCanvas.height;
+            const padding = 40;
+            const graphWidth = width - 2 * padding;
+            const graphHeight = height - 2 * padding;
+
+            // Clear canvas
+            graphCtx.fillStyle = '#0a0a1a';
+            graphCtx.fillRect(0, 0, width, height);
+
+            // Draw axes
+            graphCtx.strokeStyle = '#444';
+            graphCtx.lineWidth = 1;
+            graphCtx.beginPath();
+            graphCtx.moveTo(padding, padding);
+            graphCtx.lineTo(padding, height - padding);
+            graphCtx.lineTo(width - padding, height - padding);
+            graphCtx.stroke();
+
+            // Axis labels
+            graphCtx.fillStyle = '#888';
+            graphCtx.font = '12px Segoe UI';
+            graphCtx.textAlign = 'center';
+            graphCtx.fillText('Position on screen', width / 2, height - 10);
+
+            graphCtx.save();
+            graphCtx.translate(15, height / 2);
+            graphCtx.rotate(-Math.PI / 2);
+            graphCtx.fillText('Intensity', 0, 0);
+            graphCtx.restore();
+
+            // Grid lines
+            graphCtx.strokeStyle = '#222';
+            graphCtx.setLineDash([2, 4]);
+            for (let i = 1; i <= 4; i++) {
+                const y = padding + (graphHeight * i / 4);
+                graphCtx.beginPath();
+                graphCtx.moveTo(padding, y);
+                graphCtx.lineTo(width - padding, y);
+                graphCtx.stroke();
+            }
+            graphCtx.setLineDash([]);
+
+            const maxAngle = 0.15;
+
+            // Draw envelope (single-slit diffraction) first
+            graphCtx.strokeStyle = '#555';
+            graphCtx.lineWidth = 2;
+            graphCtx.beginPath();
+
+            for (let i = 0; i <= graphWidth; i++) {
+                const theta = (i / graphWidth - 0.5) * 2 * maxAngle;
+                const I = envelope(theta, wavelength, slitWidth);
+                const x = padding + i;
+                const y = height - padding - I * graphHeight;
+
+                if (i === 0) {
+                    graphCtx.moveTo(x, y);
+                } else {
+                    graphCtx.lineTo(x, y);
+                }
+            }
+            graphCtx.stroke();
+
+            // Draw combined intensity
+            const rgb = wavelengthToRGB(wavelength);
+            graphCtx.strokeStyle = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+            graphCtx.lineWidth = 2;
+            graphCtx.beginPath();
+
+            for (let i = 0; i <= graphWidth; i++) {
+                const theta = (i / graphWidth - 0.5) * 2 * maxAngle;
+                const I = intensity(theta, wavelength, slitWidth, slitDistance);
+                const x = padding + i;
+                const y = height - padding - I * graphHeight;
+
+                if (i === 0) {
+                    graphCtx.moveTo(x, y);
+                } else {
+                    graphCtx.lineTo(x, y);
+                }
+            }
+            graphCtx.stroke();
+
+            // Fill under curve with gradient
+            graphCtx.beginPath();
+            graphCtx.moveTo(padding, height - padding);
+
+            for (let i = 0; i <= graphWidth; i++) {
+                const theta = (i / graphWidth - 0.5) * 2 * maxAngle;
+                const I = intensity(theta, wavelength, slitWidth, slitDistance);
+                const x = padding + i;
+                const y = height - padding - I * graphHeight;
+                graphCtx.lineTo(x, y);
+            }
+
+            graphCtx.lineTo(width - padding, height - padding);
+            graphCtx.closePath();
+
+            const gradient = graphCtx.createLinearGradient(0, padding, 0, height - padding);
+            gradient.addColorStop(0, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.3)`);
+            gradient.addColorStop(1, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.05)`);
+            graphCtx.fillStyle = gradient;
+            graphCtx.fill();
+        }
+
+        // Draw slit diagram
+        function drawSlitDiagram() {
+            const slitWidth = parseFloat(slitWidthSlider.value);
+            const slitDistance = parseFloat(slitDistanceSlider.value);
+
+            const width = slitCanvas.width;
+            const height = slitCanvas.height;
+
+            // Clear
+            slitCtx.fillStyle = '#0a0a1a';
+            slitCtx.fillRect(0, 0, width, height);
+
+            // Scale factors for visualization
+            const maxDist = 100; // max slit distance
+            const scale = (width - 40) / (maxDist + 20);
+            const centerX = width / 2;
+            const centerY = height / 2;
+
+            // Calculate slit positions
+            const slitSeparationPx = slitDistance * scale;
+            const slitWidthPx = Math.max(slitWidth * scale, 2);
+
+            // Draw barrier
+            slitCtx.fillStyle = '#333';
+            slitCtx.fillRect(0, centerY - 15, width, 30);
+
+            // Draw slits (openings)
+            slitCtx.fillStyle = '#4cc9f0';
+
+            // Left slit
+            const leftSlitX = centerX - slitSeparationPx / 2 - slitWidthPx / 2;
+            slitCtx.fillRect(leftSlitX, centerY - 15, slitWidthPx, 30);
+
+            // Right slit
+            const rightSlitX = centerX + slitSeparationPx / 2 - slitWidthPx / 2;
+            slitCtx.fillRect(rightSlitX, centerY - 15, slitWidthPx, 30);
+
+            // Draw dimension lines
+            slitCtx.strokeStyle = '#888';
+            slitCtx.lineWidth = 1;
+            slitCtx.setLineDash([2, 2]);
+
+            // Slit width indicator (left slit)
+            slitCtx.beginPath();
+            slitCtx.moveTo(leftSlitX, centerY + 20);
+            slitCtx.lineTo(leftSlitX, centerY + 35);
+            slitCtx.moveTo(leftSlitX + slitWidthPx, centerY + 20);
+            slitCtx.lineTo(leftSlitX + slitWidthPx, centerY + 35);
+            slitCtx.stroke();
+
+            // Slit separation indicator
+            slitCtx.beginPath();
+            slitCtx.moveTo(centerX - slitSeparationPx / 2, centerY - 20);
+            slitCtx.lineTo(centerX - slitSeparationPx / 2, centerY - 35);
+            slitCtx.moveTo(centerX + slitSeparationPx / 2, centerY - 20);
+            slitCtx.lineTo(centerX + slitSeparationPx / 2, centerY - 35);
+            slitCtx.stroke();
+
+            slitCtx.setLineDash([]);
+
+            // Labels
+            slitCtx.fillStyle = '#f72585';
+            slitCtx.font = '10px Segoe UI';
+            slitCtx.textAlign = 'center';
+            slitCtx.fillText('a', leftSlitX + slitWidthPx / 2, centerY + 45);
+
+            slitCtx.fillStyle = '#4cc9f0';
+            slitCtx.fillText('d', centerX, centerY - 40);
+        }
+
+        // Update value displays
+        function updateDisplays() {
+            document.getElementById('wavelength-value').textContent =
+                wavelengthSlider.value + ' nm';
+            document.getElementById('slit-width-value').textContent =
+                parseFloat(slitWidthSlider.value).toFixed(1) + ' μm';
+            document.getElementById('slit-distance-value').textContent =
+                parseFloat(slitDistanceSlider.value).toFixed(1) + ' μm';
+        }
+
+        // Main update function
+        function update() {
+            updateDisplays();
+            drawPattern();
+            drawGraph();
+            drawSlitDiagram();
+        }
+
+        // Event listeners
+        wavelengthSlider.addEventListener('input', update);
+        slitWidthSlider.addEventListener('input', update);
+        slitDistanceSlider.addEventListener('input', update);
+
+        // Initial draw
+        update();
+    </script>
+</body>
+</html>

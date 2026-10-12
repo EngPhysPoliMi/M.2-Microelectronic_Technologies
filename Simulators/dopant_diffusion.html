@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dopant Diffusion in Silicon - Fick's Laws Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #eee;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #00d4ff;
+            font-size: 1.8em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 20px;
+            font-size: 0.95em;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 20px;
+        }
+
+        .controls-panel {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .plot-panel {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .section {
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 0.85em;
+            color: #00d4ff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid rgba(0,212,255,0.3);
+        }
+
+        .scenario-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .scenario-btn {
+            padding: 12px;
+            border: 2px solid rgba(0,212,255,0.3);
+            background: rgba(0,212,255,0.1);
+            color: #eee;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+            font-size: 0.9em;
+        }
+
+        .scenario-btn:hover {
+            background: rgba(0,212,255,0.2);
+            border-color: rgba(0,212,255,0.5);
+        }
+
+        .scenario-btn.active {
+            background: rgba(0,212,255,0.3);
+            border-color: #00d4ff;
+        }
+
+        .scenario-btn .title {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        .scenario-btn .desc {
+            font-size: 0.8em;
+            color: #aaa;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.85em;
+            color: #ccc;
+        }
+
+        .control-group select,
+        .control-group input[type="number"] {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+
+        .control-group select:focus,
+        .control-group input:focus {
+            outline: none;
+            border-color: #00d4ff;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .slider-with-input {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .slider-with-input .input-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .slider-with-input input[type="number"] {
+            width: 80px;
+            padding: 6px 8px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(0,0,0,0.3);
+            color: #00d4ff;
+            border-radius: 4px;
+            font-size: 0.9em;
+            font-family: monospace;
+        }
+
+        .slider-with-input .unit {
+            color: #888;
+            font-size: 0.85em;
+        }
+
+        .slider-container input[type="range"] {
+            flex: 1;
+            -webkit-appearance: none;
+            height: 6px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 3px;
+        }
+
+        .slider-container input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #00d4ff;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .slider-value {
+            min-width: 80px;
+            text-align: right;
+            font-family: monospace;
+            font-size: 0.85em;
+            color: #00d4ff;
+        }
+
+        .animation-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #00d4ff;
+            color: #1a1a2e;
+        }
+
+        .btn-primary:hover {
+            background: #00b8e6;
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: #eee;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #plotCanvas {
+            width: 100%;
+            height: 500px;
+            background: #0a0a15;
+            border-radius: 8px;
+        }
+
+        .plot-info {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .info-box {
+            background: rgba(0,0,0,0.3);
+            padding: 10px 8px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .info-box .label {
+            font-size: 0.7em;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-box .value {
+            font-size: 0.95em;
+            color: #00d4ff;
+            font-family: monospace;
+            margin-top: 5px;
+            word-break: break-all;
+        }
+
+        .equations-panel {
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: 'Times New Roman', serif;
+        }
+
+        .equations-panel h3 {
+            font-size: 0.85em;
+            color: #00d4ff;
+            margin-bottom: 10px;
+        }
+
+        .equation {
+            color: #ccc;
+            font-size: 0.95em;
+            margin: 8px 0;
+            padding: 8px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 4px;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85em;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 3px;
+            border-radius: 2px;
+        }
+
+        .time-display {
+            text-align: center;
+            font-size: 1.2em;
+            color: #00d4ff;
+            margin-bottom: 10px;
+            font-family: monospace;
+        }
+
+        .plot-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .scale-toggle {
+            display: flex;
+            gap: 5px;
+            background: rgba(0,0,0,0.3);
+            padding: 4px;
+            border-radius: 6px;
+        }
+
+        .scale-btn {
+            padding: 6px 12px;
+            border: none;
+            background: transparent;
+            color: #888;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .scale-btn:hover {
+            color: #ccc;
+        }
+
+        .scale-btn.active {
+            background: #00d4ff;
+            color: #1a1a2e;
+        }
+
+        @media (max-width: 900px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Dopant Diffusion in Silicon</h1>
+        <p class="subtitle">Interactive simulation based on Fick's Laws of Diffusion</p>
+
+        <div class="main-layout">
+            <div class="controls-panel">
+                <div class="section">
+                    <div class="section-title">Diffusion Scenario</div>
+                    <div class="scenario-buttons">
+                        <button class="scenario-btn active" data-scenario="implant">
+                            <span class="title">1. Post-Implant Diffusion</span>
+                            <span class="desc">Gaussian profile from ion implantation</span>
+                        </button>
+                        <button class="scenario-btn" data-scenario="limited">
+                            <span class="title">2. Semi-Infinite Source Diffusion</span>
+                            <span class="desc">Diffusion from doped layer, C(0)=C₀/2</span>
+                        </button>
+                        <button class="scenario-btn" data-scenario="constant">
+                            <span class="title">3. Constant Surface Concentration</span>
+                            <span class="desc">Gas-phase or infinite source diffusion</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Dopant & Process Parameters</div>
+
+                    <div class="control-group">
+                        <label>Dopant Species</label>
+                        <select id="dopantSelect">
+                            <option value="B">Boron (B) - p-type</option>
+                            <option value="P">Phosphorus (P) - n-type</option>
+                            <option value="As">Arsenic (As) - n-type</option>
+                            <option value="Sb">Antimony (Sb) - n-type</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Temperature</label>
+                        <div class="slider-with-input">
+                            <div class="input-row">
+                                <input type="number" id="tempInput" min="20" max="1400" value="1000" step="1">
+                                <span class="unit">°C</span>
+                            </div>
+                            <div class="slider-container">
+                                <span style="font-size:0.75em;color:#666;">800</span>
+                                <input type="range" id="tempSlider" min="800" max="1200" value="1000" step="10">
+                                <span style="font-size:0.75em;color:#666;">1200</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Diffusion Time</label>
+                        <div class="slider-with-input">
+                            <div class="input-row">
+                                <input type="number" id="timeInput" min="0.001" max="100000" value="30" step="any">
+                                <select id="timeUnitSelect" style="padding:6px;background:rgba(0,0,0,0.3);color:#ccc;border:1px solid rgba(255,255,255,0.2);border-radius:4px;">
+                                    <option value="min" selected>minutes</option>
+                                    <option value="hour">hours</option>
+                                    <option value="sec">seconds</option>
+                                </select>
+                            </div>
+                            <div class="slider-container">
+                                <span style="font-size:0.75em;color:#666;">1</span>
+                                <input type="range" id="timeSlider" min="1" max="100" value="30">
+                                <span style="font-size:0.75em;color:#666;">100 min</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section" id="implantParams">
+                    <div class="section-title">Ion Implant Parameters</div>
+                    <div class="control-group">
+                        <label>Implant Dose (cm⁻²)</label>
+                        <select id="doseSelect">
+                            <option value="1e13">1×10¹³</option>
+                            <option value="5e13">5×10¹³</option>
+                            <option value="1e14">1×10¹⁴</option>
+                            <option value="5e14">5×10¹⁴</option>
+                            <option value="1e15" selected>1×10¹⁵</option>
+                            <option value="5e15">5×10¹⁵</option>
+                            <option value="1e16">1×10¹⁶</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Implant Energy: <span id="energyValue">50</span> keV</label>
+                        <div class="slider-container">
+                            <input type="range" id="energySlider" min="10" max="200" value="50" step="5">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section" id="sourceParams" style="display:none;">
+                    <div class="section-title">Source Parameters</div>
+                    <div class="control-group">
+                        <label id="concLabel">Source Concentration (cm⁻³)</label>
+                        <select id="concSelect">
+                            <option value="1e18">1×10¹⁸</option>
+                            <option value="5e18">5×10¹⁸</option>
+                            <option value="1e19">1×10¹⁹</option>
+                            <option value="5e19">5×10¹⁹</option>
+                            <option value="1e20" selected>1×10²⁰</option>
+                            <option value="5e20">5×10²⁰</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Animation Control</div>
+                    <div class="animation-controls">
+                        <button class="btn btn-primary" id="playBtn">▶ Play</button>
+                        <button class="btn btn-secondary" id="resetBtn">↺ Reset</button>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <label style="font-size: 0.85em; color: #ccc;">Animation Speed</label>
+                        <div class="slider-container">
+                            <input type="range" id="speedSlider" min="1" max="10" value="5">
+                            <span class="slider-value" id="speedValue">5x</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="plot-panel">
+                <div class="plot-header">
+                    <div class="time-display">t = <span id="currentTime">0 min</span></div>
+                    <div class="scale-toggle">
+                        <button class="scale-btn active" data-scale="log">Log</button>
+                        <button class="scale-btn" data-scale="linear">Linear</button>
+                    </div>
+                </div>
+                <canvas id="plotCanvas"></canvas>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ff6b6b;"></div>
+                        <span>Initial Profile (t=0)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #00d4ff;"></div>
+                        <span>Current Profile</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: rgba(255,255,255,0.3); border: 1px dashed #888;"></div>
+                        <span>Background (Nᵢ)</span>
+                    </div>
+                </div>
+
+                <div class="plot-info">
+                    <div class="info-box">
+                        <div class="label">Diffusion Coefficient D</div>
+                        <div class="value" id="diffCoeff">-</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="label">√(Dt)</div>
+                        <div class="value" id="diffLength">-</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="label">2√(Dt)</div>
+                        <div class="value" id="diffLength2">-</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="label">Junction Depth xⱼ</div>
+                        <div class="value" id="junctionDepth">-</div>
+                    </div>
+                </div>
+
+                <div class="equations-panel" id="equationsPanel">
+                    <h3>Governing Equations</h3>
+                    <div class="equation" id="mainEquation"></div>
+                    <div class="equation" id="solutionEquation"></div>
+                    <div class="equation" id="diffusivityEquation">
+                        D = D₀ · exp(-Eₐ/kT)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Physical constants
+        const kB = 8.617e-5; // Boltzmann constant in eV/K
+
+        // Dopant diffusion parameters (D0 in cm²/s, Ea in eV)
+        const dopantData = {
+            B: { D0: 10.5, Ea: 3.69, name: 'Boron', color: '#ff6b6b' },
+            P: { D0: 10.5, Ea: 3.69, name: 'Phosphorus', color: '#4ecdc4' },
+            As: { D0: 0.32, Ea: 3.56, name: 'Arsenic', color: '#ffe66d' },
+            Sb: { D0: 5.6, Ea: 3.95, name: 'Antimony', color: '#c7f464' }
+        };
+
+        // Implant range parameters (simplified model: Rp and deltaRp in nm per keV^0.5)
+        // Using empirical approximations for silicon
+        const implantParams = {
+            B: { rpCoeff: 7.5, drpCoeff: 2.8 },      // lighter, penetrates deeper
+            P: { rpCoeff: 4.2, drpCoeff: 1.8 },
+            As: { rpCoeff: 2.1, drpCoeff: 0.9 },     // heavier, shallower
+            Sb: { rpCoeff: 1.8, drpCoeff: 0.75 }
+        };
+
+        // Background doping concentration (cm^-3)
+        const Nb = 1e15;
+
+        // State variables
+        let currentScenario = 'implant';
+        let isPlaying = false;
+        let animationTime = 0;
+        let animationId = null;
+        let canvas, ctx;
+        let yScale = 'log'; // 'log' or 'linear'
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            canvas = document.getElementById('plotCanvas');
+            ctx = canvas.getContext('2d');
+
+            setupEventListeners();
+            resizeCanvas();
+            updateEquations();
+            draw();
+
+            window.addEventListener('resize', () => {
+                resizeCanvas();
+                draw();
+            });
+        });
+
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        }
+
+        function setupEventListeners() {
+            // Scenario buttons
+            document.querySelectorAll('.scenario-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.scenario-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentScenario = btn.dataset.scenario;
+                    updateParamVisibility();
+                    updateEquations();
+                    resetAnimation();
+                });
+            });
+
+            // Temperature controls - sync slider and input
+            document.getElementById('tempSlider').addEventListener('input', (e) => {
+                document.getElementById('tempInput').value = e.target.value;
+                draw();
+            });
+
+            document.getElementById('tempInput').addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                // Update slider if value is within slider range
+                if (val >= 800 && val <= 1200) {
+                    document.getElementById('tempSlider').value = val;
+                }
+                draw();
+            });
+
+            // Time controls - sync slider, input, and unit
+            document.getElementById('timeSlider').addEventListener('input', (e) => {
+                document.getElementById('timeInput').value = e.target.value;
+                document.getElementById('timeUnitSelect').value = 'min';
+                draw();
+            });
+
+            document.getElementById('timeInput').addEventListener('input', draw);
+            document.getElementById('timeUnitSelect').addEventListener('change', draw);
+
+            document.getElementById('energySlider').addEventListener('input', (e) => {
+                document.getElementById('energyValue').textContent = e.target.value;
+                draw();
+            });
+
+            document.getElementById('speedSlider').addEventListener('input', (e) => {
+                document.getElementById('speedValue').textContent = e.target.value + 'x';
+            });
+
+            document.getElementById('dopantSelect').addEventListener('change', () => {
+                updateEquations();
+                draw();
+            });
+
+            document.getElementById('doseSelect').addEventListener('change', draw);
+            document.getElementById('concSelect').addEventListener('change', draw);
+
+            // Animation controls
+            document.getElementById('playBtn').addEventListener('click', toggleAnimation);
+            document.getElementById('resetBtn').addEventListener('click', resetAnimation);
+
+            // Scale toggle
+            document.querySelectorAll('.scale-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.scale-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    yScale = btn.dataset.scale;
+                    draw();
+                });
+            });
+        }
+
+        function updateParamVisibility() {
+            const implantParams = document.getElementById('implantParams');
+            const sourceParams = document.getElementById('sourceParams');
+            const concLabel = document.getElementById('concLabel');
+
+            if (currentScenario === 'implant') {
+                implantParams.style.display = 'block';
+                sourceParams.style.display = 'none';
+            } else {
+                implantParams.style.display = 'none';
+                sourceParams.style.display = 'block';
+                // Update label based on scenario
+                if (currentScenario === 'limited') {
+                    concLabel.textContent = 'Source Concentration C₀ (cm⁻³)';
+                } else {
+                    concLabel.textContent = 'Surface Concentration C₀ (cm⁻³)';
+                }
+            }
+        }
+
+        function updateEquations() {
+            const mainEq = document.getElementById('mainEquation');
+            const solEq = document.getElementById('solutionEquation');
+
+            mainEq.innerHTML = "Fick's Second Law: ∂C/∂t = D · ∂²C/∂x²";
+
+            if (currentScenario === 'implant') {
+                solEq.innerHTML = 'C(x,t) = Q/√(π·(ΔRp² + 2Dt)) · exp(-(x-Rp)²/(ΔRp² + 2Dt))';
+            } else if (currentScenario === 'limited') {
+                solEq.innerHTML = 'C(x,t) = (C₀/2) · erfc(x / 2√(Dt))  →  C(0,t) = C₀/2';
+            } else {
+                solEq.innerHTML = 'C(x,t) = C₀ · erfc(x / 2√(Dt))  →  C(0,t) = C₀';
+            }
+        }
+
+        function getDiffusionCoeff(dopant, tempC) {
+            const T = tempC + 273.15; // Convert to Kelvin
+            const data = dopantData[dopant];
+            return data.D0 * Math.exp(-data.Ea / (kB * T));
+        }
+
+        function getImplantRanges(dopant, energy) {
+            const params = implantParams[dopant];
+            const sqrtE = Math.sqrt(energy);
+            const Rp = params.rpCoeff * sqrtE; // in nm
+            const dRp = params.drpCoeff * sqrtE; // in nm
+            return { Rp, dRp };
+        }
+
+        // Error function approximation
+        function erf(x) {
+            const a1 =  0.254829592;
+            const a2 = -0.284496736;
+            const a3 =  1.421413741;
+            const a4 = -1.453152027;
+            const a5 =  1.061405429;
+            const p  =  0.3275911;
+
+            const sign = x < 0 ? -1 : 1;
+            x = Math.abs(x);
+
+            const t = 1.0 / (1.0 + p * x);
+            const y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+
+            return sign * y;
+        }
+
+        function erfc(x) {
+            return 1 - erf(x);
+        }
+
+        function getConcentration(x, time, params) {
+            const D = params.D; // cm²/s
+            const t = time * 60; // convert minutes to seconds
+
+            if (currentScenario === 'implant') {
+                const Rp = params.Rp * 1e-7; // nm to cm
+                const dRp = params.dRp * 1e-7; // nm to cm
+                const Q = params.dose; // dose in cm^-2
+
+                const variance = dRp * dRp + 2 * D * t;
+                const sqrt_variance = Math.sqrt(variance);
+                const peak = Q / (Math.sqrt(Math.PI) * sqrt_variance);
+                const exponent = -Math.pow(x - Rp, 2) / (2 * variance);
+
+                return peak * Math.exp(exponent);
+
+            } else if (currentScenario === 'limited') {
+                // Semi-infinite source diffusion
+                // Source (x < 0) at C0, Silicon (x >= 0) initially at 0
+                // Solution: C(x,t) = (C0/2) * erfc(x / (2*sqrt(Dt)))
+                // At interface (x=0): C = C0/2
+                const C0 = params.C0;
+
+                if (t === 0) {
+                    // Initial step profile: C0 for x<0 (source), 0 for x>0 (silicon)
+                    if (x < 0) return C0;
+                    if (x > 0) return 0;
+                    return C0 / 2; // x = 0
+                }
+
+                // For t > 0, the erfc solution works for all x (including negative)
+                const Dt = D * t;
+                return (C0 / 2) * erfc(x / (2 * Math.sqrt(Dt)));
+
+            } else { // constant surface concentration
+                const C0 = params.C0;
+
+                if (t === 0) {
+                    return x === 0 ? C0 : 0;
+                }
+
+                const Dt = D * t;
+                return C0 * erfc(x / (2 * Math.sqrt(Dt)));
+            }
+        }
+
+        function findJunctionDepth(params, time) {
+            // Binary search for junction depth where C = Nb
+            let low = 0;
+            let high = 5e-4; // 5 microns max
+
+            for (let i = 0; i < 50; i++) {
+                const mid = (low + high) / 2;
+                const C = getConcentration(mid, time, params);
+
+                if (C > Nb) {
+                    low = mid;
+                } else {
+                    high = mid;
+                }
+            }
+
+            return (low + high) / 2;
+        }
+
+        // Helper function to get time in minutes from input and unit selector
+        function getTimeInMinutes() {
+            const timeVal = parseFloat(document.getElementById('timeInput').value) || 0;
+            const unit = document.getElementById('timeUnitSelect').value;
+            switch (unit) {
+                case 'sec': return timeVal / 60;
+                case 'hour': return timeVal * 60;
+                default: return timeVal; // minutes
+            }
+        }
+
+        function draw() {
+            const width = canvas.width / window.devicePixelRatio;
+            const height = canvas.height / window.devicePixelRatio;
+
+            // Clear canvas
+            ctx.fillStyle = '#0a0a15';
+            ctx.fillRect(0, 0, width, height);
+
+            // Get parameters
+            const dopant = document.getElementById('dopantSelect').value;
+            const temp = parseFloat(document.getElementById('tempInput').value) || 1000;
+            const maxTime = getTimeInMinutes();
+            const currentTime = isPlaying ? animationTime : maxTime;
+
+            const D = getDiffusionCoeff(dopant, temp);
+
+            let params = { D };
+
+            if (currentScenario === 'implant') {
+                const energy = parseFloat(document.getElementById('energySlider').value);
+                const dose = parseFloat(document.getElementById('doseSelect').value);
+                const ranges = getImplantRanges(dopant, energy);
+                params.Rp = ranges.Rp;
+                params.dRp = ranges.dRp;
+                params.dose = dose;
+            } else {
+                params.C0 = parseFloat(document.getElementById('concSelect').value);
+            }
+
+            // Plot margins
+            const margin = { top: 40, right: 40, bottom: 60, left: 80 };
+            const plotWidth = width - margin.left - margin.right;
+            const plotHeight = height - margin.top - margin.bottom;
+
+            // Determine x range (depth)
+            let minDepth = 0; // Will be negative for semi-infinite source
+            let maxDepth;
+            if (currentScenario === 'implant') {
+                maxDepth = Math.max(0.5, (params.Rp + 4 * params.dRp + 4 * Math.sqrt(2 * D * maxTime * 60) * 1e7) * 1e-7 * 1e4); // in microns
+            } else {
+                maxDepth = Math.max(0.5, 4 * Math.sqrt(D * maxTime * 60) * 1e4); // in microns
+            }
+            maxDepth = Math.min(maxDepth, 2); // Cap at 2 microns
+
+            // For semi-infinite source, show part of the source region (x < 0)
+            if (currentScenario === 'limited') {
+                minDepth = -maxDepth * 0.3; // Show 30% of the positive range on negative side
+            }
+            const xRange = maxDepth - minDepth;
+
+            // Helper function to convert x (in microns) to pixel position
+            function xToPixel(x_um) {
+                return margin.left + ((x_um - minDepth) / xRange) * plotWidth;
+            }
+
+            // Y range (concentration)
+            const yMinLog = 1e14;
+            const yMaxLog = currentScenario === 'implant' ?
+                         Math.max(1e20, params.dose / (Math.sqrt(Math.PI) * params.dRp * 1e-7)) :
+                         params.C0 * 10;
+
+            // For linear scale, use 0 to max
+            const yMin = yScale === 'log' ? yMinLog : 0;
+            const yMax = yScale === 'log' ? yMaxLog : (currentScenario === 'implant' ?
+                         params.dose / (Math.sqrt(Math.PI) * params.dRp * 1e-7) :
+                         params.C0);
+
+            // Helper function to convert concentration to Y pixel position
+            function concToY(C) {
+                if (yScale === 'log') {
+                    if (C <= 0) C = yMinLog;
+                    const logC = Math.log10(C);
+                    return margin.top + plotHeight - ((logC - Math.log10(yMinLog)) / (Math.log10(yMaxLog) - Math.log10(yMinLog))) * plotHeight;
+                } else {
+                    return margin.top + plotHeight - (C / yMax) * plotHeight;
+                }
+            }
+
+            // Draw grid
+            ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+            ctx.lineWidth = 1;
+
+            // Vertical grid lines
+            const xStep = xRange / 6;
+            for (let i = 0; i <= 6; i++) {
+                const x = minDepth + i * xStep;
+                const px = xToPixel(x);
+                ctx.beginPath();
+                ctx.moveTo(px, margin.top);
+                ctx.lineTo(px, margin.top + plotHeight);
+                ctx.stroke();
+            }
+
+            // Horizontal grid lines
+            if (yScale === 'log') {
+                for (let exp = 14; exp <= 21; exp++) {
+                    const py = concToY(Math.pow(10, exp));
+                    if (py >= margin.top && py <= margin.top + plotHeight) {
+                        ctx.beginPath();
+                        ctx.moveTo(margin.left, py);
+                        ctx.lineTo(margin.left + plotWidth, py);
+                        ctx.stroke();
+                    }
+                }
+            } else {
+                for (let i = 0; i <= 5; i++) {
+                    const py = margin.top + (i / 5) * plotHeight;
+                    ctx.beginPath();
+                    ctx.moveTo(margin.left, py);
+                    ctx.lineTo(margin.left + plotWidth, py);
+                    ctx.stroke();
+                }
+            }
+
+            // Draw axes
+            ctx.strokeStyle = '#666';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(margin.left, margin.top);
+            ctx.lineTo(margin.left, margin.top + plotHeight);
+            ctx.lineTo(margin.left + plotWidth, margin.top + plotHeight);
+            ctx.stroke();
+
+            // Axis labels
+            ctx.fillStyle = '#ccc';
+            ctx.font = '12px Segoe UI';
+            ctx.textAlign = 'center';
+            ctx.fillText('Depth (μm)', margin.left + plotWidth / 2, height - 15);
+
+            ctx.save();
+            ctx.translate(20, margin.top + plotHeight / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText('Concentration (cm⁻³)', 0, 0);
+            ctx.restore();
+
+            // X axis ticks
+            ctx.textAlign = 'center';
+            for (let i = 0; i <= 6; i++) {
+                const x = minDepth + i * xStep;
+                const px = xToPixel(x);
+                ctx.fillText(x.toFixed(2), px, margin.top + plotHeight + 20);
+            }
+
+            // Draw interface line at x=0 for semi-infinite source
+            if (currentScenario === 'limited') {
+                const x0px = xToPixel(0);
+                ctx.strokeStyle = '#ffaa00';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([8, 4]);
+                ctx.beginPath();
+                ctx.moveTo(x0px, margin.top);
+                ctx.lineTo(x0px, margin.top + plotHeight);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                // Label the regions
+                ctx.fillStyle = '#ffaa00';
+                ctx.font = '11px Segoe UI';
+                ctx.textAlign = 'center';
+                ctx.fillText('Source', xToPixel(minDepth / 2), margin.top + 15);
+                ctx.fillText('Silicon', xToPixel(maxDepth / 2), margin.top + 15);
+                ctx.fillText('x=0', x0px, margin.top + plotHeight + 35);
+            }
+
+            // Y axis ticks
+            ctx.textAlign = 'right';
+            if (yScale === 'log') {
+                for (let exp = 14; exp <= 21; exp++) {
+                    const py = concToY(Math.pow(10, exp));
+                    if (py >= margin.top && py <= margin.top + plotHeight) {
+                        ctx.fillText('10' + superscript(exp), margin.left - 10, py + 4);
+                    }
+                }
+            } else {
+                for (let i = 0; i <= 5; i++) {
+                    const val = yMax * (5 - i) / 5;
+                    const py = margin.top + (i / 5) * plotHeight;
+                    ctx.fillText(val.toExponential(1), margin.left - 10, py + 4);
+                }
+            }
+
+            // Draw background doping level
+            const nbY = concToY(Nb);
+            ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(margin.left, nbY);
+            ctx.lineTo(margin.left + plotWidth, nbY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = '#888';
+            ctx.textAlign = 'left';
+            ctx.fillText('Nᵦ = 10¹⁵ cm⁻³', margin.left + plotWidth - 100, nbY - 5);
+
+            // Function to plot concentration profile
+            function plotProfile(time, color, lineWidth) {
+                ctx.strokeStyle = color;
+                ctx.lineWidth = lineWidth;
+                ctx.beginPath();
+
+                let started = false;
+                const numPoints = 500;
+
+                for (let i = 0; i <= numPoints; i++) {
+                    const x_um = minDepth + (i / numPoints) * xRange;
+                    const x_cm = x_um * 1e-4;
+                    let C = getConcentration(x_cm, time, params);
+
+                    // Clamp concentration to visible range
+                    if (yScale === 'log') {
+                        if (C < yMinLog) C = yMinLog;
+                        if (C > yMaxLog) C = yMaxLog;
+                    } else {
+                        if (C < 0) C = 0;
+                        if (C > yMax) C = yMax;
+                    }
+
+                    const px = xToPixel(x_um);
+                    const py = concToY(C);
+
+                    if (!started) {
+                        ctx.moveTo(px, py);
+                        started = true;
+                    } else {
+                        ctx.lineTo(px, py);
+                    }
+                }
+                ctx.stroke();
+            }
+
+            // Draw initial profile (t=0)
+            plotProfile(0, '#ff6b6b', 2);
+
+            // Draw current profile
+            if (currentTime > 0) {
+                plotProfile(currentTime, '#00d4ff', 3);
+            }
+
+            // Update info displays - show time in selected unit
+            const timeUnit = document.getElementById('timeUnitSelect').value;
+            let displayTime, displayUnit;
+            if (timeUnit === 'sec') {
+                displayTime = (currentTime * 60).toFixed(1);
+                displayUnit = 's';
+            } else if (timeUnit === 'hour') {
+                displayTime = (currentTime / 60).toFixed(2);
+                displayUnit = 'h';
+            } else {
+                displayTime = currentTime.toFixed(1);
+                displayUnit = 'min';
+            }
+            document.getElementById('currentTime').textContent = displayTime + ' ' + displayUnit;
+            document.getElementById('diffCoeff').textContent = D.toExponential(2) + ' cm²/s';
+
+            // Calculate diffusion length in cm, then format appropriately
+            const sqrtDt_cm = Math.sqrt(D * currentTime * 60); // √(Dt) in cm
+            const twoSqrtDt_cm = 2 * sqrtDt_cm; // 2√(Dt) in cm
+
+            document.getElementById('diffLength').textContent = formatLength(sqrtDt_cm);
+            document.getElementById('diffLength2').textContent = formatLength(twoSqrtDt_cm);
+
+            const xj = findJunctionDepth(params, currentTime); // in cm
+            document.getElementById('junctionDepth').textContent = formatLength(xj);
+        }
+
+        // Format length with appropriate unit based on magnitude
+        function formatLength(length_cm) {
+            if (length_cm === 0 || !isFinite(length_cm)) {
+                return '0';
+            }
+
+            const length_um = length_cm * 1e4;  // microns
+            const length_nm = length_cm * 1e7;  // nanometers
+            const length_pm = length_cm * 1e10; // picometers
+            const length_fm = length_cm * 1e13; // femtometers
+
+            if (length_um >= 0.1) {
+                return length_um.toFixed(3) + ' μm';
+            } else if (length_nm >= 0.1) {
+                return length_nm.toFixed(3) + ' nm';
+            } else if (length_pm >= 0.1) {
+                return length_pm.toFixed(2) + ' pm';
+            } else if (length_fm >= 0.01) {
+                return length_fm.toFixed(2) + ' fm';
+            } else if (length_cm > 0) {
+                // Extremely small - use scientific notation in cm
+                return length_cm.toExponential(1) + ' cm';
+            } else {
+                return '≈ 0';
+            }
+        }
+
+        function superscript(n) {
+            const superscripts = {'0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴',
+                                  '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹', '-': '⁻'};
+            return String(n).split('').map(c => superscripts[c] || c).join('');
+        }
+
+        function toggleAnimation() {
+            const btn = document.getElementById('playBtn');
+            isPlaying = !isPlaying;
+
+            if (isPlaying) {
+                btn.textContent = '⏸ Pause';
+                animate();
+            } else {
+                btn.textContent = '▶ Play';
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                }
+            }
+        }
+
+        function animate() {
+            if (!isPlaying) return;
+
+            const maxTime = getTimeInMinutes();
+            const speed = parseFloat(document.getElementById('speedSlider').value);
+
+            // Scale animation speed based on total time (aim for ~10 seconds at speed 5)
+            const animationDuration = 10; // seconds at speed 1
+            const timeStep = (maxTime / (60 * animationDuration)) * speed;
+            animationTime += Math.max(timeStep, maxTime / 1000); // Ensure minimum step
+
+            if (animationTime >= maxTime) {
+                animationTime = maxTime;
+                isPlaying = false;
+                document.getElementById('playBtn').textContent = '▶ Play';
+            }
+
+            draw();
+
+            if (isPlaying) {
+                animationId = requestAnimationFrame(animate);
+            }
+        }
+
+        function resetAnimation() {
+            isPlaying = false;
+            animationTime = 0;
+            document.getElementById('playBtn').textContent = '▶ Play';
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            draw();
+        }
+    </script>
+</body>
+</html>

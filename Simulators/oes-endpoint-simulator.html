@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OES Endpoint Detection Simulator</title>
+    <style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --bg-primary: #0a0a1a;
+    --bg-secondary: #12122a;
+    --bg-tertiary: #1a1a3a;
+    --accent: #00d4ff;
+    --accent2: #ff6b6b;
+    --text-primary: #eaeaea;
+    --text-secondary: #a0a0a0;
+    --border-radius: 8px;
+}
+
+body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+header h1 {
+    font-size: 1.8rem;
+    color: var(--text-primary);
+    margin-bottom: 5px;
+}
+
+.subtitle {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+main {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 20px;
+}
+
+/* Control Panel */
+.control-panel {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    padding: 15px;
+}
+
+.control-group {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--bg-tertiary);
+}
+
+.control-group:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.control-group h3 {
+    font-size: 0.85rem;
+    color: var(--accent);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.control {
+    margin-bottom: 12px;
+}
+
+.control label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 5px;
+}
+
+.control label span {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+input[type="range"] {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--bg-tertiary);
+    outline: none;
+    -webkit-appearance: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: none;
+}
+
+select {
+    width: 100%;
+    padding: 8px;
+    border-radius: var(--border-radius);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--bg-tertiary);
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.button-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.btn {
+    flex: 1;
+    padding: 10px 15px;
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.btn:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.btn-primary {
+    background: var(--accent);
+    color: #000;
+}
+
+.btn-danger {
+    background: #c0392b;
+    color: white;
+}
+
+/* Visualization Area */
+.visualization-area {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.viz-row {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 15px;
+}
+
+.layer-view {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    padding: 15px;
+}
+
+.layer-view h4 {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+}
+
+#layerCanvas {
+    border: 1px solid var(--bg-tertiary);
+    border-radius: 4px;
+    display: block;
+    margin: 0 auto;
+}
+
+.graph-view {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    padding: 15px;
+    flex: 1;
+}
+
+.graph-view h4 {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+}
+
+#graphCanvas {
+    border: 1px solid var(--bg-tertiary);
+    border-radius: 4px;
+    width: 100%;
+}
+
+/* Info Panel */
+.info-panel {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    padding: 15px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.info-item {
+    flex: 1;
+    min-width: 100px;
+}
+
+.info-label {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 3px;
+}
+
+.info-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.info-value.endpoint {
+    color: #2ecc71;
+    animation: pulse 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+    from { opacity: 0.7; }
+    to { opacity: 1; }
+}
+
+/* Legend */
+.legend {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    padding: 12px 15px;
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.legend-color {
+    width: 20px;
+    height: 4px;
+    border-radius: 2px;
+}
+
+.legend-color.reactant {
+    background: #00ff88;
+}
+
+.legend-color.product {
+    background: #ff6b6b;
+}
+
+.legend-color.secondary {
+    background: #ffaa00;
+}
+
+/* Reaction Display */
+.reaction-display {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    padding: 15px;
+    text-align: center;
+}
+
+.reaction-equation {
+    font-size: 1.3rem;
+    font-family: 'Times New Roman', serif;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.reaction-equation .reactant {
+    color: #00ff88;
+}
+
+.reaction-equation .product {
+    color: #ff6b6b;
+}
+
+.reaction-equation .material {
+    color: var(--accent);
+}
+
+.reaction-description {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+/* Footer */
+footer {
+    margin-top: 20px;
+}
+
+.tooltips details {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    padding: 15px;
+}
+
+.tooltips summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--accent);
+}
+
+.tooltips ul {
+    margin-top: 12px;
+    padding-left: 20px;
+}
+
+.tooltips li {
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.tooltips li strong {
+    color: var(--text-primary);
+}
+
+/* Responsive */
+@media (max-width: 1000px) {
+    main {
+        grid-template-columns: 1fr;
+    }
+
+    .viz-row {
+        grid-template-columns: 1fr;
+    }
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>OES Endpoint Detection Simulator</h1>
+            <p class="subtitle">Optical Emission Spectroscopy for plasma etch process control</p>
+        </header>
+
+        <main>
+            <aside class="control-panel">
+                <section class="control-group">
+                    <h3>Process Chemistry</h3>
+                    <div class="control">
+                        <label for="chemistry">Etch Chemistry:</label>
+                        <select id="chemistry">
+                            <option value="si_f">Si etch (F-based plasma)</option>
+                            <option value="sio2_f">SiO2 etch (F-based plasma)</option>
+                            <option value="al_cl">Al etch (Cl-based plasma)</option>
+                        </select>
+                    </div>
+                </section>
+
+                <section class="control-group">
+                    <h3>Layer Configuration</h3>
+                    <div class="control">
+                        <label for="layerThickness">Layer Thickness: <span id="layerThicknessValue">200</span> nm</label>
+                        <input type="range" id="layerThickness" min="50" max="500" value="200" step="10">
+                    </div>
+                    <div class="control">
+                        <label for="etchRate">Etch Rate: <span id="etchRateValue">50</span> nm/min</label>
+                        <input type="range" id="etchRate" min="10" max="200" value="50" step="5">
+                    </div>
+                </section>
+
+                <section class="control-group">
+                    <h3>OES Settings</h3>
+                    <div class="control">
+                        <label for="sensitivity">Detection Sensitivity: <span id="sensitivityValue">50</span>%</label>
+                        <input type="range" id="sensitivity" min="10" max="100" value="50">
+                    </div>
+                    <div class="control">
+                        <label for="noiseLevel">Signal Noise: <span id="noiseLevelValue">5</span>%</label>
+                        <input type="range" id="noiseLevel" min="0" max="20" value="5">
+                    </div>
+                </section>
+
+                <section class="control-group">
+                    <h3>Simulation Controls</h3>
+                    <div class="control">
+                        <label for="simSpeed">Speed: <span id="simSpeedValue">1</span>x</label>
+                        <input type="range" id="simSpeed" min="0.5" max="5" value="1" step="0.5">
+                    </div>
+                    <div class="button-row">
+                        <button id="playBtn" class="btn btn-primary">Start</button>
+                        <button id="resetBtn" class="btn btn-danger">Reset</button>
+                    </div>
+                </section>
+            </aside>
+
+            <div class="visualization-area">
+                <div class="reaction-display">
+                    <div id="reactionEquation" class="reaction-equation">
+                        4<span class="reactant">F</span> + <span class="material">Si</span> → <span class="product">SiF<sub>4</sub></span>
+                    </div>
+                    <div id="reactionDescription" class="reaction-description">
+                        Fluorine radicals react with silicon to form volatile silicon tetrafluoride
+                    </div>
+                </div>
+
+                <div class="viz-row">
+                    <div class="layer-view">
+                        <h4>Cross-Section View</h4>
+                        <canvas id="layerCanvas" width="270" height="300"></canvas>
+                    </div>
+                    <div class="graph-view">
+                        <h4>OES Emission Intensity vs Time</h4>
+                        <canvas id="graphCanvas" width="600" height="300"></canvas>
+                    </div>
+                </div>
+
+                <div class="info-panel">
+                    <div class="info-item">
+                        <span class="info-label">Etch Progress:</span>
+                        <span id="etchProgress" class="info-value">0%</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Remaining:</span>
+                        <span id="remainingThickness" class="info-value">200 nm</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Elapsed Time:</span>
+                        <span id="elapsedTime" class="info-value">0.0 s</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Status:</span>
+                        <span id="status" class="info-value">Ready</span>
+                    </div>
+                </div>
+
+                <div class="legend">
+                    <div class="legend-item">
+                        <span class="legend-color reactant"></span>
+                        <span id="legendReactant">F (685 nm)</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color product"></span>
+                        <span id="legendProduct">SiF* (440 nm)</span>
+                    </div>
+                    <div class="legend-item" id="legendSecondaryItem" style="display: none;">
+                        <span class="legend-color secondary"></span>
+                        <span id="legendSecondary">CO (483 nm)</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <div class="tooltips">
+                <details>
+                    <summary>Understanding OES Endpoint Detection</summary>
+                    <ul>
+                        <li><strong>Optical Emission Spectroscopy (OES):</strong> Monitors light emitted by excited species in the plasma to track etch progress in real-time.</li>
+                        <li><strong>Reactant Signal (green):</strong> Emission from etchant species (e.g., F atoms). Decreases during etching as reactants are consumed, increases at endpoint when no more material to etch.</li>
+                        <li><strong>Product Signal (red):</strong> Emission from etch products (e.g., SiF*). Increases during etching, drops sharply at endpoint when layer is cleared.</li>
+                        <li><strong>Endpoint Detection:</strong> The characteristic change in emission signals indicates the etch has reached the underlying layer - critical for process control.</li>
+                        <li><strong>Selectivity:</strong> Different materials etch at different rates. OES helps stop precisely at interfaces.</li>
+                    </ul>
+                </details>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+// ==================== CHEMISTRY DEFINITIONS ====================
+const CHEMISTRIES = {
+    si_f: {
+        name: 'Silicon Etch (F-based)',
+        reaction: '4<span class="reactant">F</span> + <span class="material">Si</span> → <span class="product">SiF<sub>4</sub></span>',
+        description: 'Fluorine radicals react with silicon to form volatile silicon tetrafluoride',
+        targetLayer: { name: 'Silicon', color: '#5c6bc0' },
+        substrate: { name: 'SiO2', color: '#78909c' },
+        reactant: { name: 'F', wavelength: '685 nm', color: '#00ff88' },
+        product: { name: 'SiF*', wavelength: '440 nm', color: '#ff6b6b' },
+        secondary: null,
+        baseReactantLevel: 0.8,
+        etchingReactantLevel: 0.3,
+        productPeakLevel: 0.85
+    },
+    sio2_f: {
+        name: 'Silicon Oxide Etch (F-based)',
+        reaction: '<span class="material">SiO<sub>2</sub></span> + 4<span class="reactant">F</span> → <span class="product">SiF<sub>4</sub></span> + <span class="secondary">O<sub>2</sub></span>',
+        description: 'Fluorine etches oxide releasing oxygen - slower than Si etch',
+        targetLayer: { name: 'SiO2', color: '#78909c' },
+        substrate: { name: 'Silicon', color: '#5c6bc0' },
+        reactant: { name: 'F', wavelength: '685 nm', color: '#00ff88' },
+        product: { name: 'SiF*', wavelength: '440 nm', color: '#ff6b6b' },
+        secondary: { name: 'O', wavelength: '777 nm', color: '#ffaa00' },
+        baseReactantLevel: 0.8,
+        etchingReactantLevel: 0.45,
+        productPeakLevel: 0.7
+    },
+    al_cl: {
+        name: 'Aluminum Etch (Cl-based)',
+        reaction: '<span class="material">Al</span> + 3<span class="reactant">Cl</span> → <span class="product">AlCl<sub>3</sub></span>',
+        description: 'Chlorine plasma etches aluminum - used for metal interconnects',
+        targetLayer: { name: 'Aluminum', color: '#b0bec5' },
+        substrate: { name: 'TiN barrier', color: '#ffd54f' },
+        reactant: { name: 'Cl', wavelength: '837 nm', color: '#00ff88' },
+        product: { name: 'AlCl*', wavelength: '261 nm', color: '#ff6b6b' },
+        secondary: null,
+        baseReactantLevel: 0.75,
+        etchingReactantLevel: 0.3,
+        productPeakLevel: 0.85
+    }
+};
+
+// ==================== SIMULATION CLASS ====================
+class OESSimulation {
+    constructor() {
+        this.layerCanvas = document.getElementById('layerCanvas');
+        this.layerCtx = this.layerCanvas.getContext('2d');
+        this.graphCanvas = document.getElementById('graphCanvas');
+        this.graphCtx = this.graphCanvas.getContext('2d');
+
+        this.params = {
+            chemistry: 'si_f',
+            layerThickness: 200,
+            etchRate: 50,
+            sensitivity: 50,
+            noiseLevel: 5,
+            speed: 1
+        };
+
+        this.state = {
+            isRunning: false,
+            elapsedTime: 0,
+            etchedAmount: 0,
+            endpointReached: false,
+            endpointTime: null,
+            data: {
+                time: [],
+                reactant: [],
+                product: [],
+                secondary: []
+            }
+        };
+
+        this.animationId = null;
+        this.lastFrameTime = 0;
+
+        this.bindControls();
+        this.reset();
+    }
+
+    bindControls() {
+        // Chemistry selector
+        document.getElementById('chemistry').addEventListener('change', (e) => {
+            this.params.chemistry = e.target.value;
+            this.updateChemistryDisplay();
+            this.reset();
+        });
+
+        // Sliders
+        this.bindSlider('layerThickness', 'layerThicknessValue', (v) => {
+            this.params.layerThickness = v;
+            this.reset();
+        }, ' nm');
+
+        this.bindSlider('etchRate', 'etchRateValue', (v) => {
+            this.params.etchRate = v;
+        }, ' nm/min');
+
+        this.bindSlider('sensitivity', 'sensitivityValue', (v) => {
+            this.params.sensitivity = v;
+        }, '%');
+
+        this.bindSlider('noiseLevel', 'noiseLevelValue', (v) => {
+            this.params.noiseLevel = v;
+        }, '%');
+
+        this.bindSlider('simSpeed', 'simSpeedValue', (v) => {
+            this.params.speed = v;
+        }, 'x');
+
+        // Buttons
+        document.getElementById('playBtn').addEventListener('click', () => this.togglePlay());
+        document.getElementById('resetBtn').addEventListener('click', () => this.reset());
+
+        // Initial display
+        this.updateChemistryDisplay();
+    }
+
+    bindSlider(sliderId, valueId, callback, suffix = '') {
+        const slider = document.getElementById(sliderId);
+        const valueDisplay = document.getElementById(valueId);
+
+        const updateValue = () => {
+            const value = parseFloat(slider.value);
+            valueDisplay.textContent = value + suffix;
+            callback(value);
+        };
+
+        slider.addEventListener('input', updateValue);
+        updateValue();
+    }
+
+    updateChemistryDisplay() {
+        const chem = CHEMISTRIES[this.params.chemistry];
+
+        document.getElementById('reactionEquation').innerHTML = chem.reaction;
+        document.getElementById('reactionDescription').textContent = chem.description;
+        document.getElementById('legendReactant').textContent = `${chem.reactant.name} (${chem.reactant.wavelength})`;
+        document.getElementById('legendProduct').textContent = `${chem.product.name} (${chem.product.wavelength})`;
+
+        const secondaryItem = document.getElementById('legendSecondaryItem');
+        if (chem.secondary) {
+            secondaryItem.style.display = 'flex';
+            document.getElementById('legendSecondary').textContent = `${chem.secondary.name} (${chem.secondary.wavelength})`;
+        } else {
+            secondaryItem.style.display = 'none';
+        }
+    }
+
+    reset() {
+        this.state = {
+            isRunning: false,
+            elapsedTime: 0,
+            etchedAmount: 0,
+            endpointReached: false,
+            endpointTime: null,
+            data: {
+                time: [],
+                reactant: [],
+                product: [],
+                secondary: []
+            }
+        };
+
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
+        }
+
+        document.getElementById('playBtn').textContent = 'Start';
+        document.getElementById('playBtn').classList.add('btn-primary');
+        document.getElementById('status').textContent = 'Ready';
+        document.getElementById('status').classList.remove('endpoint');
+
+        this.render();
+    }
+
+    togglePlay() {
+        this.state.isRunning = !this.state.isRunning;
+        const playBtn = document.getElementById('playBtn');
+
+        if (this.state.isRunning) {
+            playBtn.textContent = 'Pause';
+            playBtn.classList.remove('btn-primary');
+            this.lastFrameTime = performance.now();
+            this.animate();
+        } else {
+            playBtn.textContent = 'Resume';
+            playBtn.classList.add('btn-primary');
+            if (this.animationId) {
+                cancelAnimationFrame(this.animationId);
+                this.animationId = null;
+            }
+        }
+    }
+
+    animate() {
+        if (!this.state.isRunning) return;
+
+        const now = performance.now();
+        const dt = (now - this.lastFrameTime) / 1000 * this.params.speed;
+        this.lastFrameTime = now;
+
+        this.update(dt);
+        this.render();
+
+        this.animationId = requestAnimationFrame(() => this.animate());
+    }
+
+    update(dt) {
+        const chem = CHEMISTRIES[this.params.chemistry];
+
+        // Update time
+        this.state.elapsedTime += dt;
+
+        // Calculate etching (nm/min to nm/s)
+        const etchPerSecond = this.params.etchRate / 60;
+        const previousEtched = this.state.etchedAmount;
+        this.state.etchedAmount = Math.min(
+            this.state.etchedAmount + etchPerSecond * dt,
+            this.params.layerThickness
+        );
+
+        // Check for endpoint - record the exact time when it happens
+        const wasAtEndpoint = this.state.endpointReached;
+        this.state.endpointReached = this.state.etchedAmount >= this.params.layerThickness;
+
+        if (this.state.endpointReached && !wasAtEndpoint) {
+            // Record the exact endpoint time for synchronization
+            this.state.endpointTime = this.state.elapsedTime;
+            document.getElementById('status').textContent = 'ENDPOINT DETECTED';
+            document.getElementById('status').classList.add('endpoint');
+        }
+
+        // Calculate emission intensities based on etch progress
+        // Key insight: signals are tied to how much material is being etched RIGHT NOW
+        const progress = this.state.etchedAmount / this.params.layerThickness;
+        const sensitivity = this.params.sensitivity / 100;
+        const noise = this.params.noiseLevel / 100;
+
+        let reactantIntensity, productIntensity, secondaryIntensity = 0;
+
+        if (!this.state.endpointReached) {
+            // DURING ETCHING:
+            // - Reactant is being consumed (signal LOW)
+            // - Products are being generated (signal HIGH)
+            // Signal intensity proportional to etch rate and remaining material
+
+            const etchActivity = 1.0; // Full etching activity while layer remains
+
+            // Reactant: low during active etching (being consumed)
+            reactantIntensity = chem.baseReactantLevel -
+                (chem.baseReactantLevel - chem.etchingReactantLevel) * etchActivity * sensitivity;
+
+            // Product: high during active etching (being generated)
+            productIntensity = chem.productPeakLevel * etchActivity * sensitivity;
+
+            // Secondary product (if any)
+            if (chem.secondary) {
+                secondaryIntensity = 0.5 * etchActivity * sensitivity;
+            }
+        } else {
+            // AT ENDPOINT: Layer is gone!
+            // - Reactant is no longer consumed (signal RECOVERS quickly)
+            // - Products are no longer generated (signal DROPS quickly)
+
+            const timeSinceEndpoint = this.state.elapsedTime - this.state.endpointTime;
+            // Fast recovery/drop - characteristic endpoint signature
+            const recoveryFactor = Math.min(1, timeSinceEndpoint * 3);
+
+            // Reactant: rapidly recovers to high level (no longer being consumed)
+            reactantIntensity = chem.etchingReactantLevel * sensitivity +
+                (chem.baseReactantLevel - chem.etchingReactantLevel) * recoveryFactor;
+
+            // Product: rapidly drops to near zero (no more material to etch)
+            productIntensity = chem.productPeakLevel * (1 - recoveryFactor) * sensitivity;
+
+            // Secondary: also drops
+            if (chem.secondary) {
+                secondaryIntensity = 0.5 * (1 - recoveryFactor) * sensitivity;
+            }
+        }
+
+        // Add noise
+        reactantIntensity += (Math.random() - 0.5) * noise * 0.3;
+        productIntensity += (Math.random() - 0.5) * noise * 0.3;
+        if (chem.secondary) {
+            secondaryIntensity += (Math.random() - 0.5) * noise * 0.3;
+        }
+
+        // Clamp values
+        reactantIntensity = Math.max(0.05, Math.min(1, reactantIntensity));
+        productIntensity = Math.max(0.02, Math.min(1, productIntensity));
+        if (chem.secondary) {
+            secondaryIntensity = Math.max(0.02, Math.min(1, secondaryIntensity));
+        }
+
+        // Record data point (keep all points since we use fixed scale from 0)
+        this.state.data.time.push(this.state.elapsedTime);
+        this.state.data.reactant.push(reactantIntensity);
+        this.state.data.product.push(productIntensity);
+        if (chem.secondary) {
+            this.state.data.secondary.push(secondaryIntensity);
+        }
+    }
+
+    render() {
+        this.renderLayers();
+        this.renderGraph();
+        this.updateInfoPanel();
+    }
+
+    renderLayers() {
+        const ctx = this.layerCtx;
+        const width = this.layerCanvas.width;
+        const height = this.layerCanvas.height;
+        const chem = CHEMISTRIES[this.params.chemistry];
+
+        // Clear
+        ctx.fillStyle = '#0a0a1a';
+        ctx.fillRect(0, 0, width, height);
+
+        // Dimensions
+        const margin = 30;
+        const layerWidth = width - 2 * margin;
+        const totalHeight = height - 2 * margin;
+
+        // Calculate layer heights (scale to fit)
+        const substrateHeight = totalHeight * 0.4;
+        const maxTargetHeight = totalHeight * 0.5;
+        const targetHeight = maxTargetHeight * (this.params.layerThickness / 500);
+        const etchedHeight = targetHeight * (this.state.etchedAmount / this.params.layerThickness);
+        const remainingHeight = targetHeight - etchedHeight;
+
+        // Draw substrate
+        const substrateY = height - margin - substrateHeight;
+        ctx.fillStyle = chem.substrate.color;
+        ctx.fillRect(margin, substrateY, layerWidth, substrateHeight);
+
+        // Draw target layer (remaining)
+        if (remainingHeight > 0) {
+            const targetY = substrateY - remainingHeight;
+            ctx.fillStyle = chem.targetLayer.color;
+            ctx.fillRect(margin, targetY, layerWidth, remainingHeight);
+        }
+
+        // Draw plasma region
+        const plasmaY = margin;
+        const plasmaHeight = substrateY - targetHeight - margin - 20;
+        if (plasmaHeight > 0) {
+            // Plasma glow effect
+            const gradient = ctx.createLinearGradient(0, plasmaY, 0, plasmaY + plasmaHeight);
+            gradient.addColorStop(0, 'rgba(138, 43, 226, 0.3)');
+            gradient.addColorStop(0.5, 'rgba(138, 43, 226, 0.5)');
+            gradient.addColorStop(1, 'rgba(138, 43, 226, 0.2)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(margin, plasmaY, layerWidth, plasmaHeight);
+
+            // Animated particles (ions)
+            if (this.state.isRunning && !this.state.endpointReached) {
+                ctx.fillStyle = chem.reactant.color;
+                for (let i = 0; i < 15; i++) {
+                    const px = margin + Math.random() * layerWidth;
+                    const py = plasmaY + Math.random() * plasmaHeight;
+                    ctx.beginPath();
+                    ctx.arc(px, py, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+
+        // Labels
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '11px sans-serif';
+        ctx.textAlign = 'left';
+
+        // Substrate label
+        ctx.fillText(chem.substrate.name, margin + 5, substrateY + substrateHeight / 2 + 4);
+
+        // Target layer label
+        if (remainingHeight > 15) {
+            ctx.fillText(chem.targetLayer.name, margin + 5, substrateY - remainingHeight / 2 + 4);
+        }
+
+        // Plasma label
+        if (plasmaHeight > 30) {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.fillText('Plasma', margin + 5, plasmaY + 20);
+        }
+
+        // Draw etch depth indicator
+        if (this.state.etchedAmount > 0 && remainingHeight > 0) {
+            const indicatorX = width - margin - 30;
+            const topY = substrateY - targetHeight;
+            const bottomY = substrateY - remainingHeight;
+
+            ctx.strokeStyle = '#e94560';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([3, 2]);
+
+            ctx.beginPath();
+            ctx.moveTo(indicatorX, topY);
+            ctx.lineTo(indicatorX, bottomY);
+            ctx.stroke();
+
+            ctx.setLineDash([]);
+
+            // Arrow heads
+            ctx.fillStyle = '#e94560';
+            ctx.beginPath();
+            ctx.moveTo(indicatorX, topY);
+            ctx.lineTo(indicatorX - 4, topY + 6);
+            ctx.lineTo(indicatorX + 4, topY + 6);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.moveTo(indicatorX, bottomY);
+            ctx.lineTo(indicatorX - 4, bottomY - 6);
+            ctx.lineTo(indicatorX + 4, bottomY - 6);
+            ctx.fill();
+
+            // Depth label
+            if (etchedHeight > 20) {
+                ctx.font = 'bold 10px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(`${this.state.etchedAmount.toFixed(0)}`, indicatorX, (topY + bottomY) / 2 + 4);
+            }
+        }
+
+        // Endpoint indicator
+        if (this.state.endpointReached) {
+            ctx.fillStyle = 'rgba(46, 204, 113, 0.3)';
+            ctx.fillRect(margin, substrateY - 5, layerWidth, 10);
+            ctx.fillStyle = '#2ecc71';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('ENDPOINT', width / 2, substrateY + 4);
+        }
+    }
+
+    renderGraph() {
+        const ctx = this.graphCtx;
+        const width = this.graphCanvas.width;
+        const height = this.graphCanvas.height;
+        const chem = CHEMISTRIES[this.params.chemistry];
+
+        // Clear
+        ctx.fillStyle = '#0d0d1a';
+        ctx.fillRect(0, 0, width, height);
+
+        // Graph area
+        const margin = { top: 20, right: 20, bottom: 40, left: 50 };
+        const graphWidth = width - margin.left - margin.right;
+        const graphHeight = height - margin.top - margin.bottom;
+
+        // FIXED X-AXIS SCALE based on expected endpoint time + 20% margin
+        const expectedEndpointTime = this.params.layerThickness / (this.params.etchRate / 60);
+        const timeMin = 0;
+        const timeMax = expectedEndpointTime * 1.2;  // 20% extra to see endpoint clearly
+        const timeRange = timeMax - timeMin;
+
+        // Draw grid
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.lineWidth = 1;
+
+        // Horizontal grid lines
+        for (let i = 0; i <= 5; i++) {
+            const y = margin.top + (graphHeight / 5) * i;
+            ctx.beginPath();
+            ctx.moveTo(margin.left, y);
+            ctx.lineTo(width - margin.right, y);
+            ctx.stroke();
+        }
+
+        // Vertical grid lines
+        const numVertLines = 6;
+        for (let i = 0; i <= numVertLines; i++) {
+            const x = margin.left + (graphWidth / numVertLines) * i;
+            ctx.beginPath();
+            ctx.moveTo(x, margin.top);
+            ctx.lineTo(x, height - margin.bottom);
+            ctx.stroke();
+        }
+
+        // Draw expected endpoint position (faint vertical line)
+        const expectedEndpointX = margin.left + (expectedEndpointTime / timeRange) * graphWidth;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.setLineDash([2, 4]);
+        ctx.beginPath();
+        ctx.moveTo(expectedEndpointX, margin.top);
+        ctx.lineTo(expectedEndpointX, height - margin.bottom);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Y-axis labels
+        ctx.fillStyle = '#a0a0a0';
+        ctx.font = '10px sans-serif';
+        ctx.textAlign = 'right';
+        for (let i = 0; i <= 5; i++) {
+            const y = margin.top + (graphHeight / 5) * i;
+            const value = 100 - i * 20;
+            ctx.fillText(`${value}%`, margin.left - 5, y + 4);
+        }
+
+        // X-axis label
+        ctx.textAlign = 'center';
+        ctx.fillText('Time (s)', width / 2, height - 10);
+
+        // Y-axis label
+        ctx.save();
+        ctx.translate(15, height / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText('Emission Intensity', 0, 0);
+        ctx.restore();
+
+        // Draw data
+        const data = this.state.data;
+
+        // Helper function to draw line with fixed scale
+        const drawLine = (values, color, lineWidth = 2) => {
+            if (values.length < 2) return;
+
+            ctx.strokeStyle = color;
+            ctx.lineWidth = lineWidth;
+            ctx.beginPath();
+
+            for (let i = 0; i < values.length; i++) {
+                const x = margin.left + (data.time[i] / timeRange) * graphWidth;
+                const y = margin.top + (1 - values[i]) * graphHeight;
+
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.stroke();
+        };
+
+        // Draw reactant signal (green)
+        drawLine(data.reactant, chem.reactant.color);
+
+        // Draw product signal (red)
+        drawLine(data.product, chem.product.color);
+
+        // Draw secondary signal if present
+        if (chem.secondary && data.secondary.length > 0) {
+            drawLine(data.secondary, chem.secondary.color);
+        }
+
+        // Draw endpoint marker at the exact recorded time
+        if (this.state.endpointReached && this.state.endpointTime !== null) {
+            const endpointTime = this.state.endpointTime;
+            const x = margin.left + (endpointTime / timeRange) * graphWidth;
+
+            ctx.strokeStyle = 'rgba(46, 204, 113, 0.8)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 3]);
+            ctx.beginPath();
+            ctx.moveTo(x, margin.top);
+            ctx.lineTo(x, height - margin.bottom);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = '#2ecc71';
+            ctx.font = 'bold 10px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('ENDPOINT', x, margin.top - 5);
+        }
+
+        // Time axis ticks (fixed scale from 0 to timeMax)
+        ctx.fillStyle = '#a0a0a0';
+        ctx.font = '10px sans-serif';
+        ctx.textAlign = 'center';
+        const numTicks = 6;
+        for (let i = 0; i <= numTicks; i++) {
+            const t = (timeRange / numTicks) * i;
+            const x = margin.left + (graphWidth / numTicks) * i;
+            ctx.fillText(t.toFixed(1), x, height - margin.bottom + 15);
+        }
+    }
+
+    updateInfoPanel() {
+        const progress = (this.state.etchedAmount / this.params.layerThickness) * 100;
+        const remaining = this.params.layerThickness - this.state.etchedAmount;
+
+        document.getElementById('etchProgress').textContent = `${progress.toFixed(1)}%`;
+        document.getElementById('remainingThickness').textContent = `${remaining.toFixed(1)} nm`;
+        document.getElementById('elapsedTime').textContent = `${this.state.elapsedTime.toFixed(1)} s`;
+
+        if (!this.state.isRunning && !this.state.endpointReached) {
+            document.getElementById('status').textContent =
+                this.state.elapsedTime > 0 ? 'Paused' : 'Ready';
+        } else if (this.state.isRunning && !this.state.endpointReached) {
+            document.getElementById('status').textContent = 'Etching...';
+        }
+    }
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    window.sim = new OESSimulation();
+});
+    </script>
+</body>
+</html>

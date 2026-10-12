@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optical Lithography Simulation - Photoresist Patterning</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1250px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #eee;
+        }
+        h1 {
+            text-align: center;
+            color: #fff;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 20px;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .controls {
+            flex: 1;
+            min-width: 320px;
+            background: #16213e;
+            padding: 20px;
+            border-radius: 10px;
+            max-height: 95vh;
+            overflow-y: auto;
+        }
+        .visualization {
+            flex: 2;
+            min-width: 500px;
+        }
+        .control-group {
+            margin-bottom: 16px;
+        }
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #4cc9f0;
+        }
+        .control-group input[type="range"] {
+            width: 100%;
+            margin-bottom: 5px;
+        }
+        .value-display {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85em;
+            color: #aaa;
+        }
+        .current-value {
+            color: #f72585;
+            font-weight: bold;
+        }
+        canvas {
+            display: block;
+            background: #000;
+            border-radius: 5px;
+            margin-bottom: 6px;
+        }
+        .canvas-label {
+            text-align: center;
+            color: #888;
+            font-size: 0.8em;
+            margin-bottom: 12px;
+        }
+        .section-title {
+            color: #4cc9f0;
+            font-size: 0.95em;
+            font-weight: bold;
+            margin: 15px 0 10px 0;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #333;
+        }
+        .info-box {
+            background: #0f0f23;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 12px;
+            font-size: 0.8em;
+        }
+        .info-box h4 {
+            color: #4cc9f0;
+            margin: 0 0 6px 0;
+            font-size: 0.9em;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+            border-bottom: 1px solid #222;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .info-label { color: #888; }
+        .info-value { color: #4cc9f0; font-weight: bold; }
+        .info-value.warning { color: #f59e0b; }
+        .info-value.good { color: #10b981; }
+        .info-value.poor { color: #ef4444; }
+        .order-indicator {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 8px;
+        }
+        .order-chip {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: bold;
+        }
+        .order-captured {
+            background: #10b981;
+            color: white;
+        }
+        .order-blocked {
+            background: #374151;
+            color: #888;
+        }
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding: 6px 0;
+        }
+        .toggle-label {
+            color: #4cc9f0;
+            font-weight: bold;
+            font-size: 0.85em;
+        }
+        .toggle-switch {
+            position: relative;
+            width: 46px;
+            height: 24px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #374151;
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: #10b981;
+        }
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(22px);
+        }
+        .control-group.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        .formula {
+            background: #0f0f23;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.75em;
+            line-height: 1.4;
+        }
+        .formula-title {
+            color: #4cc9f0;
+            margin-bottom: 6px;
+            font-family: 'Segoe UI', sans-serif;
+            font-weight: bold;
+        }
+        .wavelength-indicator {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            margin-left: 8px;
+        }
+        .uv { background: #7c3aed; color: white; }
+        .euv { background: #6366f1; color: white; }
+        .visible { background: linear-gradient(90deg, violet, blue, green, yellow, red); color: white; text-shadow: 0 0 2px black; }
+        .resist-color {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            margin-right: 5px;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+    <h1>Optical Lithography Simulation</h1>
+    <p class="subtitle">Image formation and photoresist patterning through lens NA</p>
+
+    <div class="container">
+        <div class="controls">
+            <div class="section-title">Light Source</div>
+            <div class="control-group">
+                <label>Wavelength (λ) <span class="wavelength-indicator" id="wavelength-type">Visible</span></label>
+                <input type="range" id="wavelength" min="13" max="800" value="365" step="1">
+                <div class="value-display">
+                    <span>13 nm</span>
+                    <span class="current-value" id="wavelength-value">365 nm</span>
+                    <span>800 nm</span>
+                </div>
+            </div>
+
+            <div class="section-title">Mask Pattern (Object)</div>
+            <div class="control-group" id="slit-width-group">
+                <label>Slit Width (a)</label>
+                <input type="range" id="slit-width" min="10" max="2000" value="250" step="10">
+                <div class="value-display">
+                    <span>10 nm</span>
+                    <span class="current-value" id="slit-width-value">250 nm</span>
+                    <span>2000 nm</span>
+                </div>
+            </div>
+
+            <div class="toggle-group">
+                <span class="toggle-label">Equal Line & Space (a = d/2)</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="equal-ls">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="control-group">
+                <label>Array Pitch (d)</label>
+                <input type="range" id="pitch" min="20" max="5000" value="500" step="10">
+                <div class="value-display">
+                    <span>20 nm</span>
+                    <span class="current-value" id="pitch-value">500 nm</span>
+                    <span>5000 nm</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Number of Lines (N)</label>
+                <input type="range" id="num-slits" min="2" max="50" value="8" step="1">
+                <div class="value-display">
+                    <span>2</span>
+                    <span class="current-value" id="num-slits-value">8</span>
+                    <span>50</span>
+                </div>
+            </div>
+
+            <div class="section-title">Projection Lens</div>
+            <div class="control-group">
+                <label>Numerical Aperture (NA)</label>
+                <input type="range" id="na" min="0.05" max="1.0" value="0.6" step="0.01">
+                <div class="value-display">
+                    <span>0.05</span>
+                    <span class="current-value" id="na-value">0.60</span>
+                    <span>1.00</span>
+                </div>
+            </div>
+
+            <div class="section-title">Photoresist</div>
+            <div class="control-group">
+                <label>Resist Thickness</label>
+                <input type="range" id="resist-thickness" min="50" max="1000" value="200" step="10">
+                <div class="value-display">
+                    <span>50 nm</span>
+                    <span class="current-value" id="resist-thickness-value">200 nm</span>
+                    <span>1000 nm</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Threshold Intensity I<sub>s</sub> (start develop)</label>
+                <input type="range" id="threshold-is" min="0.05" max="0.8" value="0.3" step="0.01">
+                <div class="value-display">
+                    <span>5%</span>
+                    <span class="current-value" id="threshold-is-value">30%</span>
+                    <span>80%</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Contrast (γ)</label>
+                <input type="range" id="contrast" min="1" max="15" value="5" step="0.5">
+                <div class="value-display">
+                    <span>1 (low)</span>
+                    <span class="current-value" id="contrast-value">5.0</span>
+                    <span>15 (high)</span>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <h4>Imaging Analysis</h4>
+                <div class="info-row">
+                    <span class="info-label">Orders captured:</span>
+                    <span class="info-value" id="orders-captured">--</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Resolution (λ/2NA):</span>
+                    <span class="info-value" id="resolution-limit">--</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Full clear I<sub>f</sub>:</span>
+                    <span class="info-value" id="threshold-if">--</span>
+                </div>
+                <div class="order-indicator" id="order-chips"></div>
+            </div>
+
+            <div class="formula">
+                <div class="formula-title">Resist Model (positive tone):</div>
+                γ = 1 / log₁₀(I<sub>f</sub>/I<sub>s</sub>)<br>
+                I<sub>f</sub> = I<sub>s</sub> · 10<sup>(1/γ)</sup><br><br>
+                <span style="color:#888">Development:</span><br>
+                I &lt; I<sub>s</sub>: no development<br>
+                I &gt; I<sub>f</sub>: full clear<br>
+                I<sub>s</sub> ≤ I ≤ I<sub>f</sub>: partial
+            </div>
+        </div>
+
+        <div class="visualization">
+            <canvas id="patternCanvas" width="700" height="90"></canvas>
+            <p class="canvas-label">Diffraction at lens pupil — <span style="color:#10b981">Green: captured by NA</span></p>
+
+            <canvas id="graphCanvas" width="700" height="160"></canvas>
+            <p class="canvas-label">Intensity vs. Angle — <span style="color:#4cc9f0">Captured</span> | <span style="color:#444">Blocked</span></p>
+
+            <canvas id="imageCanvas" width="700" height="130"></canvas>
+            <p class="canvas-label">Aerial Image — <span style="color:#f72585">Intensity at wafer</span> | <span style="color:#444">Ideal mask</span> | <span style="color:#f59e0b">I<sub>s</sub></span> / <span style="color:#ef4444">I<sub>f</sub></span> thresholds</p>
+
+            <canvas id="resistCanvas" width="700" height="150"></canvas>
+            <p class="canvas-label">Developed Photoresist Profile — <span style="background:#a855f7;color:white;padding:1px 5px;border-radius:2px;">Resist</span> on <span style="background:#64748b;color:white;padding:1px 5px;border-radius:2px;">Wafer</span></p>
+        </div>
+    </div>
+
+    <script>
+        // Canvas contexts
+        const patternCanvas = document.getElementById('patternCanvas');
+        const patternCtx = patternCanvas.getContext('2d');
+        const graphCanvas = document.getElementById('graphCanvas');
+        const graphCtx = graphCanvas.getContext('2d');
+        const imageCanvas = document.getElementById('imageCanvas');
+        const imageCtx = imageCanvas.getContext('2d');
+        const resistCanvas = document.getElementById('resistCanvas');
+        const resistCtx = resistCanvas.getContext('2d');
+
+        // Controls
+        const wavelengthSlider = document.getElementById('wavelength');
+        const slitWidthSlider = document.getElementById('slit-width');
+        const pitchSlider = document.getElementById('pitch');
+        const numSlitsSlider = document.getElementById('num-slits');
+        const naSlider = document.getElementById('na');
+        const equalLsToggle = document.getElementById('equal-ls');
+        const slitWidthGroup = document.getElementById('slit-width-group');
+        const resistThicknessSlider = document.getElementById('resist-thickness');
+        const thresholdIsSlider = document.getElementById('threshold-is');
+        const contrastSlider = document.getElementById('contrast');
+
+        // Equal Line & Space toggle logic
+        function applyEqualLineSpace() {
+            if (equalLsToggle.checked) {
+                const pitch = parseFloat(pitchSlider.value);
+                const newSlitWidth = pitch / 2;
+                const clampedWidth = Math.max(10, Math.min(2000, newSlitWidth));
+                slitWidthSlider.value = clampedWidth;
+                slitWidthGroup.classList.add('disabled');
+            } else {
+                slitWidthGroup.classList.remove('disabled');
+            }
+        }
+
+        // Convert wavelength to RGB
+        function wavelengthToRGB(wavelength) {
+            let r, g, b;
+
+            if (wavelength < 380) {
+                const t = Math.max(0, (wavelength - 13) / (380 - 13));
+                r = 0.4 + 0.3 * t;
+                g = 0;
+                b = 0.8 + 0.2 * t;
+            } else if (wavelength >= 380 && wavelength < 440) {
+                r = -(wavelength - 440) / (440 - 380);
+                g = 0;
+                b = 1;
+            } else if (wavelength >= 440 && wavelength < 490) {
+                r = 0;
+                g = (wavelength - 440) / (490 - 440);
+                b = 1;
+            } else if (wavelength >= 490 && wavelength < 510) {
+                r = 0;
+                g = 1;
+                b = -(wavelength - 510) / (510 - 490);
+            } else if (wavelength >= 510 && wavelength < 580) {
+                r = (wavelength - 510) / (580 - 510);
+                g = 1;
+                b = 0;
+            } else if (wavelength >= 580 && wavelength < 645) {
+                r = 1;
+                g = -(wavelength - 645) / (645 - 580);
+                b = 0;
+            } else if (wavelength >= 645 && wavelength <= 800) {
+                r = 1;
+                g = 0;
+                b = 0;
+            } else {
+                r = g = b = 0;
+            }
+
+            let factor;
+            if (wavelength < 380) {
+                factor = 0.8;
+            } else if (wavelength >= 380 && wavelength < 420) {
+                factor = 0.3 + 0.7 * (wavelength - 380) / (420 - 380);
+            } else if (wavelength >= 420 && wavelength <= 700) {
+                factor = 1;
+            } else if (wavelength > 700 && wavelength <= 800) {
+                factor = 0.3 + 0.7 * (800 - wavelength) / (800 - 700);
+            } else {
+                factor = 0;
+            }
+
+            return {
+                r: Math.round(255 * Math.min(1, r) * factor),
+                g: Math.round(255 * Math.min(1, g) * factor),
+                b: Math.round(255 * Math.min(1, b) * factor)
+            };
+        }
+
+        function getWavelengthType(wavelength) {
+            if (wavelength <= 30) return { text: 'EUV', class: 'euv' };
+            if (wavelength < 380) return { text: 'UV', class: 'uv' };
+            if (wavelength <= 700) return { text: 'Visible', class: 'visible' };
+            return { text: 'Near-IR', class: 'uv' };
+        }
+
+        function sinc(x) {
+            if (Math.abs(x) < 1e-10) return 1;
+            return Math.sin(x) / x;
+        }
+
+        function getOrderAmplitude(m, wavelength, slitWidth, pitch) {
+            const beta = Math.PI * slitWidth * m / pitch;
+            return sinc(beta);
+        }
+
+        function isOrderCaptured(m, wavelength, pitch, NA) {
+            const sinTheta = Math.abs(m * wavelength / pitch);
+            return sinTheta <= NA;
+        }
+
+        function getCapturedOrders(wavelength, pitch, NA) {
+            const maxPossibleOrder = Math.ceil(pitch / wavelength);
+            const captured = [];
+            for (let m = -maxPossibleOrder; m <= maxPossibleOrder; m++) {
+                if (isOrderCaptured(m, wavelength, pitch, NA)) {
+                    captured.push(m);
+                }
+            }
+            return captured;
+        }
+
+        function intensity(theta, wavelength, slitWidth, pitch, numSlits) {
+            const sinTheta = Math.sin(theta);
+            const beta = Math.PI * slitWidth * sinTheta / wavelength;
+            const singleSlit = sinc(beta) ** 2;
+
+            const alpha = Math.PI * pitch * sinTheta / wavelength;
+            const sinAlpha = Math.sin(alpha);
+
+            let grating;
+            if (Math.abs(sinAlpha) < 1e-10) {
+                grating = numSlits * numSlits;
+            } else {
+                const sinNAlpha = Math.sin(numSlits * alpha);
+                grating = (sinNAlpha / sinAlpha) ** 2;
+            }
+
+            return singleSlit * grating / (numSlits * numSlits);
+        }
+
+        function reconstructImage(x, wavelength, slitWidth, pitch, capturedOrders) {
+            let realPart = 0;
+            let imagPart = 0;
+
+            for (const m of capturedOrders) {
+                const amplitude = getOrderAmplitude(m, wavelength, slitWidth, pitch);
+                const phase = 2 * Math.PI * m * (x / pitch - 0.5);
+                realPart += amplitude * Math.cos(phase);
+                imagPart += amplitude * Math.sin(phase);
+            }
+
+            return realPart * realPart + imagPart * imagPart;
+        }
+
+        // Photoresist development model
+        // Returns remaining thickness fraction (0 = fully cleared, 1 = full thickness)
+        function developResist(intensity, Is, contrast) {
+            // Calculate If from Is and contrast: γ = 1/log10(If/Is) => If = Is * 10^(1/γ)
+            const If = Is * Math.pow(10, 1 / contrast);
+
+            if (intensity <= Is) {
+                return 1.0; // No development
+            } else if (intensity >= If) {
+                return 0.0; // Fully cleared
+            } else {
+                // Linear interpolation on log scale
+                const logIs = Math.log10(Is);
+                const logIf = Math.log10(If);
+                const logI = Math.log10(intensity);
+                const normalized = (logI - logIs) / (logIf - logIs);
+                return 1.0 - normalized;
+            }
+        }
+
+        // Calculate If from Is and contrast
+        function calculateIf(Is, contrast) {
+            return Is * Math.pow(10, 1 / contrast);
+        }
+
+        // Draw diffraction pattern at lens plane
+        function drawPattern() {
+            const wavelength = parseFloat(wavelengthSlider.value);
+            const slitWidth = parseFloat(slitWidthSlider.value);
+            const pitch = parseFloat(pitchSlider.value);
+            const numSlits = parseInt(numSlitsSlider.value);
+            const NA = parseFloat(naSlider.value);
+
+            const rgb = wavelengthToRGB(wavelength);
+            const width = patternCanvas.width;
+            const height = patternCanvas.height;
+
+            patternCtx.fillStyle = '#000';
+            patternCtx.fillRect(0, 0, width, height);
+
+            const maxAngle = Math.PI / 2 * 0.95;
+            const naAngle = Math.asin(Math.min(NA, 0.999));
+
+            const naLeftX = width / 2 - (naAngle / maxAngle) * (width / 2);
+            const naRightX = width / 2 + (naAngle / maxAngle) * (width / 2);
+
+            patternCtx.fillStyle = 'rgba(16, 185, 129, 0.15)';
+            patternCtx.fillRect(naLeftX, 0, naRightX - naLeftX, height);
+
+            const imageData = patternCtx.createImageData(width, height);
+
+            for (let px = 0; px < width; px++) {
+                const theta = (px / width - 0.5) * 2 * maxAngle;
+                const I = intensity(theta, wavelength, slitWidth, pitch, numSlits);
+                const brightness = Math.pow(Math.min(1, I), 0.4);
+
+                const isInNA = Math.abs(theta) <= naAngle;
+                const dimFactor = isInNA ? 1 : 0.2;
+
+                for (let py = 0; py < height; py++) {
+                    const idx = (py * width + px) * 4;
+                    imageData.data[idx] = rgb.r * brightness * dimFactor;
+                    imageData.data[idx + 1] = rgb.g * brightness * dimFactor;
+                    imageData.data[idx + 2] = rgb.b * brightness * dimFactor;
+                    imageData.data[idx + 3] = 255;
+                }
+            }
+
+            patternCtx.putImageData(imageData, 0, 0);
+
+            patternCtx.strokeStyle = '#10b981';
+            patternCtx.lineWidth = 2;
+            patternCtx.setLineDash([5, 5]);
+            patternCtx.beginPath();
+            patternCtx.moveTo(naLeftX, 0);
+            patternCtx.lineTo(naLeftX, height);
+            patternCtx.moveTo(naRightX, 0);
+            patternCtx.lineTo(naRightX, height);
+            patternCtx.stroke();
+            patternCtx.setLineDash([]);
+        }
+
+        // Draw intensity graph
+        function drawGraph() {
+            const wavelength = parseFloat(wavelengthSlider.value);
+            const slitWidth = parseFloat(slitWidthSlider.value);
+            const pitch = parseFloat(pitchSlider.value);
+            const numSlits = parseInt(numSlitsSlider.value);
+            const NA = parseFloat(naSlider.value);
+
+            const width = graphCanvas.width;
+            const height = graphCanvas.height;
+            const padding = { left: 40, right: 15, top: 15, bottom: 30 };
+            const graphWidth = width - padding.left - padding.right;
+            const graphHeight = height - padding.top - padding.bottom;
+
+            graphCtx.fillStyle = '#0a0a1a';
+            graphCtx.fillRect(0, 0, width, height);
+
+            const maxAngle = Math.PI / 2 * 0.7;
+            const naAngle = Math.asin(Math.min(NA, 0.999));
+            const capturedOrders = getCapturedOrders(wavelength, pitch, NA);
+
+            const naLeftX = padding.left + (0.5 - naAngle / maxAngle / 2) * graphWidth;
+            const naRightX = padding.left + (0.5 + naAngle / maxAngle / 2) * graphWidth;
+
+            graphCtx.fillStyle = 'rgba(16, 185, 129, 0.1)';
+            graphCtx.fillRect(naLeftX, padding.top, naRightX - naLeftX, graphHeight);
+
+            graphCtx.strokeStyle = '#444';
+            graphCtx.lineWidth = 1;
+            graphCtx.beginPath();
+            graphCtx.moveTo(padding.left, padding.top);
+            graphCtx.lineTo(padding.left, height - padding.bottom);
+            graphCtx.lineTo(width - padding.right, height - padding.bottom);
+            graphCtx.stroke();
+
+            graphCtx.fillStyle = '#888';
+            graphCtx.font = '10px Segoe UI';
+            graphCtx.textAlign = 'center';
+            graphCtx.fillText('Angle (θ)', width / 2, height - 5);
+
+            graphCtx.strokeStyle = '#222';
+            graphCtx.setLineDash([2, 4]);
+            for (let i = 1; i <= 4; i++) {
+                const y = padding.top + (graphHeight * i / 4);
+                graphCtx.beginPath();
+                graphCtx.moveTo(padding.left, y);
+                graphCtx.lineTo(width - padding.right, y);
+                graphCtx.stroke();
+            }
+            graphCtx.setLineDash([]);
+
+            const rgb = wavelengthToRGB(wavelength);
+
+            graphCtx.strokeStyle = '#333';
+            graphCtx.lineWidth = 1.5;
+            graphCtx.beginPath();
+            let started = false;
+
+            for (let i = 0; i <= graphWidth; i++) {
+                const theta = (i / graphWidth - 0.5) * 2 * maxAngle;
+                const I = intensity(theta, wavelength, slitWidth, pitch, numSlits);
+                const x = padding.left + i;
+                const y = height - padding.bottom - Math.min(1, I) * graphHeight;
+
+                if (!started) {
+                    graphCtx.moveTo(x, y);
+                    started = true;
+                } else {
+                    graphCtx.lineTo(x, y);
+                }
+            }
+            graphCtx.stroke();
+
+            graphCtx.strokeStyle = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+            graphCtx.lineWidth = 2;
+            graphCtx.beginPath();
+            started = false;
+
+            for (let i = 0; i <= graphWidth; i++) {
+                const theta = (i / graphWidth - 0.5) * 2 * maxAngle;
+
+                if (Math.abs(theta) > naAngle) {
+                    started = false;
+                    continue;
+                }
+
+                const I = intensity(theta, wavelength, slitWidth, pitch, numSlits);
+                const x = padding.left + i;
+                const y = height - padding.bottom - Math.min(1, I) * graphHeight;
+
+                if (!started) {
+                    graphCtx.moveTo(x, y);
+                    started = true;
+                } else {
+                    graphCtx.lineTo(x, y);
+                }
+            }
+            graphCtx.stroke();
+
+            // Order markers
+            const maxOrder = Math.ceil(pitch / wavelength);
+            graphCtx.font = '9px Segoe UI';
+
+            for (let m = -maxOrder; m <= maxOrder; m++) {
+                const sinTheta = m * wavelength / pitch;
+                if (Math.abs(sinTheta) > 1) continue;
+
+                const theta = Math.asin(sinTheta);
+                if (Math.abs(theta) > maxAngle) continue;
+
+                const x = padding.left + (theta / maxAngle / 2 + 0.5) * graphWidth;
+                const isCaptured = capturedOrders.includes(m);
+
+                graphCtx.fillStyle = isCaptured ? '#10b981' : '#444';
+                graphCtx.fillText(`${m}`, x, height - padding.bottom + 10);
+            }
+        }
+
+        // Draw aerial image with thresholds
+        function drawImage() {
+            const wavelength = parseFloat(wavelengthSlider.value);
+            const slitWidth = parseFloat(slitWidthSlider.value);
+            const pitch = parseFloat(pitchSlider.value);
+            const numSlits = parseInt(numSlitsSlider.value);
+            const NA = parseFloat(naSlider.value);
+            const Is = parseFloat(thresholdIsSlider.value);
+            const contrast = parseFloat(contrastSlider.value);
+            const If = calculateIf(Is, contrast);
+
+            const width = imageCanvas.width;
+            const height = imageCanvas.height;
+            const padding = { left: 40, right: 15, top: 20, bottom: 25 };
+            const graphWidth = width - padding.left - padding.right;
+            const graphHeight = height - padding.top - padding.bottom;
+
+            imageCtx.fillStyle = '#0a0a1a';
+            imageCtx.fillRect(0, 0, width, height);
+
+            const capturedOrders = getCapturedOrders(wavelength, pitch, NA);
+
+            const arrayWidth = (numSlits - 1) * pitch + slitWidth;
+            const margin = pitch * 1.5;
+            const displayWidth = arrayWidth + 2 * margin;
+            const displayStart = -margin;
+
+            const numPoints = graphWidth;
+            const reconstructed = [];
+            const ideal = [];
+            let maxRecon = 0;
+
+            for (let i = 0; i < numPoints; i++) {
+                const x = displayStart + (i / numPoints) * displayWidth;
+                const reconI = reconstructImage(x, wavelength, slitWidth, pitch, capturedOrders);
+                reconstructed.push(reconI);
+
+                let isInSlit = 0;
+                for (let s = 0; s < numSlits; s++) {
+                    const slitCenter = pitch / 2 + s * pitch;
+                    if (x >= slitCenter - slitWidth / 2 && x <= slitCenter + slitWidth / 2) {
+                        isInSlit = 1;
+                        break;
+                    }
+                }
+                ideal.push(isInSlit);
+                maxRecon = Math.max(maxRecon, reconI);
+            }
+
+            if (maxRecon > 0) {
+                for (let i = 0; i < numPoints; i++) {
+                    reconstructed[i] /= maxRecon;
+                }
+            }
+
+            // Store normalized intensity for resist calculation
+            window.aerialImage = reconstructed;
+            window.displayStart = displayStart;
+            window.displayWidth = displayWidth;
+
+            // Draw axes
+            imageCtx.strokeStyle = '#444';
+            imageCtx.lineWidth = 1;
+            imageCtx.beginPath();
+            imageCtx.moveTo(padding.left, padding.top);
+            imageCtx.lineTo(padding.left, height - padding.bottom);
+            imageCtx.lineTo(width - padding.right, height - padding.bottom);
+            imageCtx.stroke();
+
+            // Draw threshold lines
+            const IsY = height - padding.bottom - Is * graphHeight;
+            const IfY = height - padding.bottom - Math.min(1, If) * graphHeight;
+
+            imageCtx.strokeStyle = '#f59e0b';
+            imageCtx.lineWidth = 1;
+            imageCtx.setLineDash([4, 4]);
+            imageCtx.beginPath();
+            imageCtx.moveTo(padding.left, IsY);
+            imageCtx.lineTo(width - padding.right, IsY);
+            imageCtx.stroke();
+
+            if (If <= 1) {
+                imageCtx.strokeStyle = '#ef4444';
+                imageCtx.beginPath();
+                imageCtx.moveTo(padding.left, IfY);
+                imageCtx.lineTo(width - padding.right, IfY);
+                imageCtx.stroke();
+            }
+            imageCtx.setLineDash([]);
+
+            // Labels for thresholds
+            imageCtx.font = '9px Segoe UI';
+            imageCtx.fillStyle = '#f59e0b';
+            imageCtx.textAlign = 'left';
+            imageCtx.fillText('Is', padding.left + 3, IsY - 3);
+            if (If <= 1) {
+                imageCtx.fillStyle = '#ef4444';
+                imageCtx.fillText('If', padding.left + 3, IfY - 3);
+            }
+
+            // Draw ideal object (gray)
+            imageCtx.fillStyle = 'rgba(100, 100, 100, 0.3)';
+            for (let s = 0; s < numSlits; s++) {
+                const slitCenter = pitch / 2 + s * pitch;
+                const slitLeftNm = slitCenter - slitWidth / 2;
+                const slitRightNm = slitCenter + slitWidth / 2;
+
+                const slitLeftPx = padding.left + ((slitLeftNm - displayStart) / displayWidth) * graphWidth;
+                const slitRightPx = padding.left + ((slitRightNm - displayStart) / displayWidth) * graphWidth;
+                const slitWidthPx = slitRightPx - slitLeftPx;
+
+                if (slitRightPx > padding.left && slitLeftPx < padding.left + graphWidth) {
+                    imageCtx.fillRect(slitLeftPx, padding.top, slitWidthPx, graphHeight);
+                }
+            }
+
+            // Draw ideal outline
+            imageCtx.strokeStyle = '#555';
+            imageCtx.lineWidth = 1;
+            imageCtx.beginPath();
+            for (let i = 0; i < numPoints; i++) {
+                const x = padding.left + i;
+                const y = height - padding.bottom - ideal[i] * graphHeight * 0.95;
+                if (i === 0) imageCtx.moveTo(x, y);
+                else imageCtx.lineTo(x, y);
+            }
+            imageCtx.stroke();
+
+            // Draw aerial image
+            imageCtx.strokeStyle = '#f72585';
+            imageCtx.lineWidth = 2;
+            imageCtx.beginPath();
+            for (let i = 0; i < numPoints; i++) {
+                const x = padding.left + i;
+                const y = height - padding.bottom - reconstructed[i] * graphHeight * 0.95;
+                if (i === 0) imageCtx.moveTo(x, y);
+                else imageCtx.lineTo(x, y);
+            }
+            imageCtx.stroke();
+
+            // Fill under curve
+            imageCtx.beginPath();
+            imageCtx.moveTo(padding.left, height - padding.bottom);
+            for (let i = 0; i < numPoints; i++) {
+                const x = padding.left + i;
+                const y = height - padding.bottom - reconstructed[i] * graphHeight * 0.95;
+                imageCtx.lineTo(x, y);
+            }
+            imageCtx.lineTo(padding.left + graphWidth, height - padding.bottom);
+            imageCtx.closePath();
+
+            const gradient = imageCtx.createLinearGradient(0, padding.top, 0, height - padding.bottom);
+            gradient.addColorStop(0, 'rgba(247, 37, 133, 0.25)');
+            gradient.addColorStop(1, 'rgba(247, 37, 133, 0.05)');
+            imageCtx.fillStyle = gradient;
+            imageCtx.fill();
+        }
+
+        // Draw resist profile
+        function drawResist() {
+            const wavelength = parseFloat(wavelengthSlider.value);
+            const slitWidth = parseFloat(slitWidthSlider.value);
+            const pitch = parseFloat(pitchSlider.value);
+            const numSlits = parseInt(numSlitsSlider.value);
+            const NA = parseFloat(naSlider.value);
+            const resistThickness = parseFloat(resistThicknessSlider.value);
+            const Is = parseFloat(thresholdIsSlider.value);
+            const contrast = parseFloat(contrastSlider.value);
+
+            const width = resistCanvas.width;
+            const height = resistCanvas.height;
+            const padding = { left: 40, right: 15, top: 15, bottom: 30 };
+            const graphWidth = width - padding.left - padding.right;
+            const waferY = height - padding.bottom;
+            const maxResistHeight = height - padding.top - padding.bottom - 20;
+
+            resistCtx.fillStyle = '#0a0a1a';
+            resistCtx.fillRect(0, 0, width, height);
+
+            // Get aerial image data
+            const aerialImage = window.aerialImage || [];
+            const displayStart = window.displayStart || 0;
+            const displayWidth = window.displayWidth || 1;
+
+            if (aerialImage.length === 0) return;
+
+            // Draw wafer substrate
+            resistCtx.fillStyle = '#64748b';
+            resistCtx.fillRect(padding.left, waferY, graphWidth, 15);
+
+            // Calculate resist profile
+            const resistProfile = [];
+            for (let i = 0; i < aerialImage.length; i++) {
+                const remainingFraction = developResist(aerialImage[i], Is, contrast);
+                resistProfile.push(remainingFraction * resistThickness);
+            }
+
+            // Draw resist as filled polygon
+            resistCtx.beginPath();
+            resistCtx.moveTo(padding.left, waferY);
+
+            for (let i = 0; i < resistProfile.length; i++) {
+                const x = padding.left + i;
+                const resistHeight = (resistProfile[i] / resistThickness) * maxResistHeight;
+                const y = waferY - resistHeight;
+                resistCtx.lineTo(x, y);
+            }
+
+            resistCtx.lineTo(padding.left + graphWidth, waferY);
+            resistCtx.closePath();
+
+            // Resist fill with gradient
+            const resistGradient = resistCtx.createLinearGradient(0, waferY - maxResistHeight, 0, waferY);
+            resistGradient.addColorStop(0, '#c084fc');
+            resistGradient.addColorStop(1, '#7c3aed');
+            resistCtx.fillStyle = resistGradient;
+            resistCtx.fill();
+
+            // Resist outline
+            resistCtx.strokeStyle = '#a855f7';
+            resistCtx.lineWidth = 1.5;
+            resistCtx.beginPath();
+            for (let i = 0; i < resistProfile.length; i++) {
+                const x = padding.left + i;
+                const resistHeight = (resistProfile[i] / resistThickness) * maxResistHeight;
+                const y = waferY - resistHeight;
+                if (i === 0) resistCtx.moveTo(x, y);
+                else resistCtx.lineTo(x, y);
+            }
+            resistCtx.stroke();
+
+            // Position labels
+            resistCtx.fillStyle = '#666';
+            resistCtx.font = '9px Segoe UI';
+            resistCtx.textAlign = 'center';
+
+            const numMarkers = 5;
+            for (let i = 0; i <= numMarkers; i++) {
+                const xPx = padding.left + (i / numMarkers) * graphWidth;
+                const xNm = displayStart + (i / numMarkers) * displayWidth;
+
+                let label;
+                if (Math.abs(xNm) >= 1000) {
+                    label = (xNm / 1000).toFixed(1) + 'μm';
+                } else {
+                    label = Math.round(xNm) + 'nm';
+                }
+                resistCtx.fillText(label, xPx, height - 5);
+            }
+
+            // Thickness scale on left
+            resistCtx.textAlign = 'right';
+            resistCtx.fillStyle = '#888';
+            resistCtx.fillText(resistThickness + 'nm', padding.left - 5, waferY - maxResistHeight + 5);
+            resistCtx.fillText('0', padding.left - 5, waferY);
+        }
+
+        // Update displays
+        function updateDisplays() {
+            const wavelength = parseFloat(wavelengthSlider.value);
+            const slitWidth = parseFloat(slitWidthSlider.value);
+            const pitch = parseFloat(pitchSlider.value);
+            const numSlits = parseInt(numSlitsSlider.value);
+            const NA = parseFloat(naSlider.value);
+            const resistThickness = parseFloat(resistThicknessSlider.value);
+            const Is = parseFloat(thresholdIsSlider.value);
+            const contrast = parseFloat(contrastSlider.value);
+            const If = calculateIf(Is, contrast);
+
+            document.getElementById('wavelength-value').textContent = wavelength + ' nm';
+
+            if (slitWidth >= 1000) {
+                document.getElementById('slit-width-value').textContent = (slitWidth / 1000).toFixed(2) + ' μm';
+            } else {
+                document.getElementById('slit-width-value').textContent = slitWidth + ' nm';
+            }
+
+            if (pitch >= 1000) {
+                document.getElementById('pitch-value').textContent = (pitch / 1000).toFixed(2) + ' μm';
+            } else {
+                document.getElementById('pitch-value').textContent = pitch + ' nm';
+            }
+
+            document.getElementById('num-slits-value').textContent = numSlits;
+            document.getElementById('na-value').textContent = NA.toFixed(2);
+            document.getElementById('resist-thickness-value').textContent = resistThickness + ' nm';
+            document.getElementById('threshold-is-value').textContent = Math.round(Is * 100) + '%';
+            document.getElementById('contrast-value').textContent = contrast.toFixed(1);
+
+            // Wavelength type
+            const wlType = getWavelengthType(wavelength);
+            const typeEl = document.getElementById('wavelength-type');
+            typeEl.textContent = wlType.text;
+            typeEl.className = 'wavelength-indicator ' + wlType.class;
+
+            // Imaging analysis
+            const capturedOrders = getCapturedOrders(wavelength, pitch, NA);
+            const maxCaptured = Math.max(...capturedOrders.map(Math.abs));
+            document.getElementById('orders-captured').textContent =
+                capturedOrders.length > 1 ? `0 to ±${maxCaptured} (${capturedOrders.length})` : '0th only';
+
+            const resolutionLimit = wavelength / (2 * NA);
+            if (resolutionLimit >= 1000) {
+                document.getElementById('resolution-limit').textContent = (resolutionLimit / 1000).toFixed(2) + ' μm';
+            } else {
+                document.getElementById('resolution-limit').textContent = resolutionLimit.toFixed(0) + ' nm';
+            }
+
+            // If threshold
+            if (If > 1) {
+                document.getElementById('threshold-if').textContent = (If * 100).toFixed(0) + '% (>100%)';
+            } else {
+                document.getElementById('threshold-if').textContent = Math.round(If * 100) + '%';
+            }
+
+            // Order chips
+            const chipsContainer = document.getElementById('order-chips');
+            chipsContainer.innerHTML = '';
+
+            const maxOrder = Math.min(Math.ceil(pitch / wavelength), 8);
+            for (let m = -maxOrder; m <= maxOrder; m++) {
+                const chip = document.createElement('span');
+                chip.className = 'order-chip ' + (capturedOrders.includes(m) ? 'order-captured' : 'order-blocked');
+                chip.textContent = m >= 0 ? `+${m}` : m;
+                chipsContainer.appendChild(chip);
+            }
+        }
+
+        // Main update
+        function update() {
+            updateDisplays();
+            drawPattern();
+            drawGraph();
+            drawImage();
+            drawResist();
+        }
+
+        // Event listeners
+        wavelengthSlider.addEventListener('input', update);
+        slitWidthSlider.addEventListener('input', update);
+        pitchSlider.addEventListener('input', function() {
+            applyEqualLineSpace();
+            update();
+        });
+        numSlitsSlider.addEventListener('input', update);
+        naSlider.addEventListener('input', update);
+        equalLsToggle.addEventListener('change', function() {
+            applyEqualLineSpace();
+            update();
+        });
+        resistThicknessSlider.addEventListener('input', update);
+        thresholdIsSlider.addEventListener('input', update);
+        contrastSlider.addEventListener('input', update);
+
+        // Initial draw
+        update();
+    </script>
+</body>
+</html>

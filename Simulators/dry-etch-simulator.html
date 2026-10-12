@@ -1,0 +1,1516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dry Etching Simulation</title>
+    <style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --bg-primary: #1a1a2e;
+    --bg-secondary: #16213e;
+    --bg-tertiary: #0f3460;
+    --accent: #e94560;
+    --text-primary: #eaeaea;
+    --text-secondary: #a0a0a0;
+    --mask-color: #607d8b;
+    --substrate-color: #3f51b5;
+    --etched-color: #1a1a2e;
+    --redeposit-color: #ff9800;
+    --border-radius: 8px;
+}
+
+body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+header h1 {
+    font-size: 1.8rem;
+    color: var(--text-primary);
+    margin-bottom: 5px;
+}
+
+.subtitle {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+main {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 20px;
+}
+
+.control-panel {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    padding: 15px;
+    max-height: calc(100vh - 150px);
+    overflow-y: auto;
+}
+
+.control-group {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--bg-tertiary);
+}
+
+.control-group:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.control-group h3 {
+    font-size: 0.9rem;
+    color: var(--accent);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.control {
+    margin-bottom: 12px;
+}
+
+.control label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 5px;
+}
+
+.control label span {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+input[type="range"] {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--bg-tertiary);
+    outline: none;
+    -webkit-appearance: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: none;
+}
+
+input[type="checkbox"] {
+    margin-right: 8px;
+    accent-color: var(--accent);
+}
+
+.button-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.btn {
+    flex: 1;
+    padding: 10px 15px;
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.btn:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.btn-primary {
+    background: var(--accent);
+    color: white;
+}
+
+.btn-danger {
+    background: #c0392b;
+    color: white;
+}
+
+.visualization-area {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.canvas-container {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    padding: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#simCanvas {
+    border: 1px solid var(--bg-tertiary);
+    border-radius: 4px;
+}
+
+.info-panel {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    padding: 15px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.info-item {
+    flex: 1;
+    min-width: 120px;
+}
+
+.info-label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 3px;
+}
+
+.info-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.legend {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    padding: 12px 15px;
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.legend-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.legend-color.mask { background: var(--mask-color); }
+.legend-color.substrate { background: var(--substrate-color); }
+.legend-color.etched { background: var(--etched-color); }
+.legend-color.redeposit { background: var(--redeposit-color); }
+
+footer {
+    margin-top: 20px;
+}
+
+.tooltips details {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    padding: 15px;
+}
+
+.tooltips summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--accent);
+}
+
+.tooltips ul {
+    margin-top: 12px;
+    padding-left: 20px;
+}
+
+.tooltips li {
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.tooltips li strong {
+    color: var(--text-primary);
+}
+
+.control-panel::-webkit-scrollbar {
+    width: 6px;
+}
+
+.control-panel::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+
+.control-panel::-webkit-scrollbar-thumb {
+    background: var(--bg-tertiary);
+    border-radius: 3px;
+}
+
+@media (max-width: 900px) {
+    main {
+        grid-template-columns: 1fr;
+    }
+
+    .control-panel {
+        max-height: none;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+    }
+
+    .control-group {
+        border-bottom: none;
+        border-right: 1px solid var(--bg-tertiary);
+        padding-right: 15px;
+        padding-bottom: 0;
+        margin-bottom: 0;
+    }
+
+    .control-group:last-child {
+        border-right: none;
+    }
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Dry Etching Simulation</h1>
+            <p class="subtitle">Interactive tool for understanding plasma etch mechanisms</p>
+        </header>
+
+        <main>
+            <aside class="control-panel">
+                <section class="control-group">
+                    <h3>Ion Bombardment</h3>
+                    <div class="control">
+                        <label for="ionEnergy">Ion Energy: <span id="ionEnergyValue">200</span> eV</label>
+                        <input type="range" id="ionEnergy" min="50" max="500" value="200" step="10">
+                    </div>
+                    <div class="control">
+                        <label for="ionFlux">Ion Flux: <span id="ionFluxValue">50</span>%</label>
+                        <input type="range" id="ionFlux" min="0" max="100" value="50">
+                    </div>
+                    <div class="control">
+                        <label for="angularSpread">Angular Spread: <span id="angularSpreadValue">5</span>deg</label>
+                        <input type="range" id="angularSpread" min="0" max="30" value="5">
+                    </div>
+                </section>
+
+                <section class="control-group">
+                    <h3>Chemical Etching</h3>
+                    <div class="control">
+                        <label for="chemicalRate">Chemical Rate: <span id="chemicalRateValue">30</span>%</label>
+                        <input type="range" id="chemicalRate" min="0" max="100" value="30">
+                    </div>
+                    <div class="control">
+                        <label for="selectivity">Mask Selectivity: <span id="selectivityValue">10</span>:1</label>
+                        <input type="range" id="selectivity" min="1" max="100" value="10">
+                    </div>
+                </section>
+
+                <section class="control-group">
+                    <h3>Redeposition</h3>
+                    <div class="control">
+                        <label>
+                            <input type="checkbox" id="redepositionEnabled" checked>
+                            Enable Redeposition
+                        </label>
+                    </div>
+                    <div class="control">
+                        <label for="redepositionRate">Redeposition Rate: <span id="redepositionRateValue">50</span>%</label>
+                        <input type="range" id="redepositionRate" min="0" max="100" value="50">
+                    </div>
+                </section>
+
+                <section class="control-group">
+                    <h3>Pattern Configuration</h3>
+                    <div class="control">
+                        <label for="numFeatures">Number of Features: <span id="numFeaturesValue">3</span></label>
+                        <input type="range" id="numFeatures" min="1" max="5" value="3">
+                    </div>
+                    <div class="control">
+                        <label for="featureWidth">Feature Width: <span id="featureWidthValue">40</span> nm</label>
+                        <input type="range" id="featureWidth" min="20" max="100" value="40" step="5">
+                    </div>
+                    <div class="control">
+                        <label for="featureSpacing">Feature Spacing: <span id="featureSpacingValue">60</span> nm</label>
+                        <input type="range" id="featureSpacing" min="20" max="150" value="60" step="5">
+                    </div>
+                    <div class="control">
+                        <label for="maskThickness">Mask Thickness: <span id="maskThicknessValue">30</span> nm</label>
+                        <input type="range" id="maskThickness" min="10" max="80" value="30" step="5">
+                    </div>
+                    <div class="control">
+                        <label>
+                            <input type="checkbox" id="variableWidths" checked>
+                            Variable Widths (10/50/150 nm)
+                        </label>
+                        <small style="display: block; color: #888; margin-top: 4px;">Narrow features etch slower (microloading)</small>
+                    </div>
+                </section>
+
+                <section class="control-group">
+                    <h3>Simulation Controls</h3>
+                    <div class="control">
+                        <label for="simSpeed">Speed: <span id="simSpeedValue">5</span></label>
+                        <input type="range" id="simSpeed" min="1" max="10" value="5">
+                    </div>
+                    <div class="button-row">
+                        <button id="playBtn" class="btn btn-primary">Play</button>
+                        <button id="stepBtn" class="btn">Step</button>
+                        <button id="resetBtn" class="btn btn-danger">Reset</button>
+                    </div>
+                </section>
+
+            </aside>
+
+            <div class="visualization-area">
+                <div class="canvas-container">
+                    <canvas id="simCanvas" width="800" height="500"></canvas>
+                </div>
+
+                <div class="info-panel">
+                    <div class="info-item">
+                        <span class="info-label">Center Depth:</span>
+                        <span id="etchDepth" class="info-value">0 nm</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Wide Feature:</span>
+                        <span id="wideDepth" class="info-value">0 nm</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Narrow Feature:</span>
+                        <span id="narrowDepth" class="info-value">0 nm</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Microloading:</span>
+                        <span id="microloading" class="info-value">0%</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Aspect Ratio:</span>
+                        <span id="aspectRatio" class="info-value">0:1</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Time Step:</span>
+                        <span id="timeStep" class="info-value">0</span>
+                    </div>
+                </div>
+
+                <div class="legend">
+                    <div class="legend-item">
+                        <span class="legend-color mask"></span>
+                        <span>Hard Mask</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color substrate"></span>
+                        <span>Substrate (Si)</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color etched"></span>
+                        <span>Etched</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color redeposit"></span>
+                        <span>Redeposited</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <div class="tooltips">
+                <details>
+                    <summary>Understanding the Parameters</summary>
+                    <ul>
+                        <li><strong>Ion Energy:</strong> Higher energy increases sputter yield but may cause more damage</li>
+                        <li><strong>Ion Flux:</strong> Controls the directional (anisotropic) etch component</li>
+                        <li><strong>Angular Spread:</strong> Wider spread causes more tapered sidewalls</li>
+                        <li><strong>Chemical Rate:</strong> Controls the isotropic etch component (undercutting)</li>
+                        <li><strong>Mask Selectivity:</strong> How much faster substrate etches vs mask</li>
+                        <li><strong>Redeposition Rate:</strong> Controls sidewall taper from redeposited material</li>
+                        <li><strong>Variable Widths:</strong> Creates features of 10/50/150 nm to demonstrate microloading (narrow features etch much slower)</li>
+                    </ul>
+                </details>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+// ==================== PATTERNS.JS ====================
+const Material = {
+    EMPTY: 0,
+    SUBSTRATE: 1,
+    MASK: 2,
+    REDEPOSIT: 3
+};
+
+function createPattern(config) {
+    const {
+        gridWidth,
+        gridHeight,
+        numFeatures,
+        featureWidth,
+        featureSpacing,
+        maskThickness,
+        cellSize,
+        variableWidths
+    } = config;
+
+    const grid = new Uint8Array(gridWidth * gridHeight);
+    const maskCells = Math.round(maskThickness / cellSize);
+    const spacingCells = Math.round(featureSpacing / cellSize);
+
+    let featureWidthsNm;
+    if (variableWidths && variableWidths.length > 0) {
+        featureWidthsNm = variableWidths;
+    } else {
+        featureWidthsNm = Array(numFeatures).fill(featureWidth);
+    }
+
+    const featureWidthsCells = featureWidthsNm.map(w => Math.round(w / cellSize));
+    const totalFeatureWidth = featureWidthsCells.reduce((a, b) => a + b, 0);
+    const totalPatternWidth = totalFeatureWidth + (featureWidthsCells.length - 1) * spacingCells;
+    const startX = Math.floor((gridWidth - totalPatternWidth) / 2);
+
+    grid.fill(Material.SUBSTRATE);
+
+    for (let y = 0; y < gridHeight - maskCells; y++) {
+        for (let x = 0; x < gridWidth; x++) {
+            if (y < gridHeight * 0.3) {
+                grid[y * gridWidth + x] = Material.EMPTY;
+            }
+        }
+    }
+
+    const maskTop = Math.floor(gridHeight * 0.3);
+    const maskBottom = maskTop + maskCells;
+
+    for (let y = maskTop; y < maskBottom; y++) {
+        for (let x = 0; x < gridWidth; x++) {
+            grid[y * gridWidth + x] = Material.MASK;
+        }
+    }
+
+    for (let y = maskBottom; y < gridHeight; y++) {
+        for (let x = 0; x < gridWidth; x++) {
+            grid[y * gridWidth + x] = Material.SUBSTRATE;
+        }
+    }
+
+    let currentX = startX;
+    for (let f = 0; f < featureWidthsCells.length; f++) {
+        const thisFeatureWidth = featureWidthsCells[f];
+        for (let y = maskTop; y < maskBottom; y++) {
+            for (let x = currentX; x < currentX + thisFeatureWidth && x < gridWidth; x++) {
+                if (x >= 0) {
+                    grid[y * gridWidth + x] = Material.EMPTY;
+                }
+            }
+        }
+        currentX += thisFeatureWidth + spacingCells;
+    }
+
+    return grid;
+}
+
+function getFeaturePositions(config) {
+    const {
+        gridWidth,
+        numFeatures,
+        featureWidth,
+        featureSpacing,
+        cellSize,
+        variableWidths
+    } = config;
+
+    const features = [];
+    const spacingCells = Math.round(featureSpacing / cellSize);
+
+    let featureWidthsNm;
+    if (variableWidths && variableWidths.length > 0) {
+        featureWidthsNm = variableWidths;
+    } else {
+        featureWidthsNm = Array(numFeatures).fill(featureWidth);
+    }
+
+    const featureWidthsCells = featureWidthsNm.map(w => Math.round(w / cellSize));
+    const totalFeatureWidth = featureWidthsCells.reduce((a, b) => a + b, 0);
+    const totalPatternWidth = totalFeatureWidth + (featureWidthsCells.length - 1) * spacingCells;
+    const startX = Math.floor((gridWidth - totalPatternWidth) / 2);
+
+    let currentX = startX;
+    for (let f = 0; f < featureWidthsCells.length; f++) {
+        const widthCells = featureWidthsCells[f];
+        const widthNm = featureWidthsNm[f];
+        features.push({
+            index: f,
+            startX: currentX,
+            endX: currentX + widthCells,
+            centerX: currentX + widthCells / 2,
+            width: widthCells,
+            widthNm: widthNm
+        });
+        currentX += widthCells + spacingCells;
+    }
+
+    return features;
+}
+
+function calculateExposedArea(grid, width, height) {
+    let exposedCells = 0;
+
+    for (let y = 1; y < height - 1; y++) {
+        for (let x = 1; x < width - 1; x++) {
+            const idx = y * width + x;
+            const material = grid[idx];
+
+            if (material === Material.SUBSTRATE || material === Material.MASK) {
+                if (grid[(y - 1) * width + x] === Material.EMPTY ||
+                    grid[(y + 1) * width + x] === Material.EMPTY ||
+                    grid[y * width + (x - 1)] === Material.EMPTY ||
+                    grid[y * width + (x + 1)] === Material.EMPTY) {
+                    exposedCells++;
+                }
+            }
+        }
+    }
+
+    return exposedCells;
+}
+
+function findSurfaceCells(grid, width, height) {
+    const surfaceCells = [];
+
+    for (let y = 1; y < height - 1; y++) {
+        for (let x = 1; x < width - 1; x++) {
+            const idx = y * width + x;
+            const material = grid[idx];
+
+            if (material === Material.EMPTY) continue;
+
+            let emptyNeighbors = 0;
+            let normalX = 0;
+            let normalY = 0;
+
+            const neighbors = [
+                { dx: -1, dy: -1 }, { dx: 0, dy: -1 }, { dx: 1, dy: -1 },
+                { dx: -1, dy: 0 },                      { dx: 1, dy: 0 },
+                { dx: -1, dy: 1 },  { dx: 0, dy: 1 },  { dx: 1, dy: 1 }
+            ];
+
+            for (const { dx, dy } of neighbors) {
+                const nx = x + dx;
+                const ny = y + dy;
+                if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                    if (grid[ny * width + nx] === Material.EMPTY) {
+                        emptyNeighbors++;
+                        normalX += dx;
+                        normalY += dy;
+                    }
+                }
+            }
+
+            if (emptyNeighbors > 0) {
+                const mag = Math.sqrt(normalX * normalX + normalY * normalY);
+                if (mag > 0) {
+                    normalX /= mag;
+                    normalY /= mag;
+                }
+
+                surfaceCells.push({
+                    x,
+                    y,
+                    material,
+                    normalX,
+                    normalY,
+                    emptyNeighbors
+                });
+            }
+        }
+    }
+
+    return surfaceCells;
+}
+
+function measureEtchDepth(grid, width, height, featureCenterX, maskBottom) {
+    let depth = 0;
+    const x = Math.floor(featureCenterX);
+
+    for (let y = maskBottom; y < height; y++) {
+        if (grid[y * width + x] === Material.EMPTY) {
+            depth++;
+        } else {
+            break;
+        }
+    }
+
+    return depth;
+}
+
+function measureSidewallAngle(grid, width, feature, maskBottom) {
+    const leftProfile = [];
+
+    for (let y = maskBottom; y < maskBottom + 100; y++) {
+        for (let x = feature.startX - 20; x < feature.centerX; x++) {
+            if (x >= 0 && grid[y * width + x] !== Material.EMPTY) {
+                leftProfile.push({ x, y });
+                break;
+            }
+        }
+    }
+
+    if (leftProfile.length < 2) return 90;
+
+    const dy = leftProfile[leftProfile.length - 1].y - leftProfile[0].y;
+    const dx = leftProfile[leftProfile.length - 1].x - leftProfile[0].x;
+
+    if (dy === 0) return 90;
+
+    const angle = 90 - Math.atan(Math.abs(dx) / dy) * 180 / Math.PI;
+    return Math.round(angle * 10) / 10;
+}
+
+// ==================== PHYSICS.JS ====================
+function calculateARDEFactor(x, y, grid, width, maskBottom) {
+    if (y <= maskBottom) return 1.0;
+
+    let leftWall = x;
+    let rightWall = x;
+
+    for (let dx = 1; dx < 60; dx++) {
+        const checkX = x - dx;
+        if (checkX < 0) { leftWall = 0; break; }
+        if (grid[y * width + checkX] !== Material.EMPTY) {
+            leftWall = checkX;
+            break;
+        }
+        if (dx === 59) leftWall = x - 59;
+    }
+
+    for (let dx = 1; dx < 60; dx++) {
+        const checkX = x + dx;
+        if (checkX >= width) { rightWall = width - 1; break; }
+        if (grid[y * width + checkX] !== Material.EMPTY) {
+            rightWall = checkX;
+            break;
+        }
+        if (dx === 59) rightWall = x + 59;
+    }
+
+    const trenchWidth = rightWall - leftWall;
+    const depth = y - maskBottom;
+
+    if (trenchWidth <= 1 || depth <= 0) return 1.0;
+
+    const aspectRatio = depth / trenchWidth;
+    const transmission = 1 / (1 + 0.4 * aspectRatio + 0.1 * aspectRatio * aspectRatio);
+
+    return Math.max(0.05, transmission);
+}
+
+// ==================== SIMULATION.JS ====================
+class Simulation {
+    constructor() {
+        this.cellSize = 2;
+        this.gridWidth = 400;
+        this.gridHeight = 250;
+
+        this.grid = null;
+        this.etchAccumulator = null;
+        this.depositionAccumulator = null;
+        this.passivation = null;
+        this.etchRates = null;
+
+        this.patternParams = {
+            numFeatures: 3,
+            featureWidth: 40,
+            featureSpacing: 40,
+            maskThickness: 30,
+            variableWidths: [10, 50, 150]
+        };
+
+        this.referenceWidth = 150;
+
+        this.params = {
+            ionEnergy: 200,
+            ionFlux: 50,
+            angularSpread: 5,
+            chemicalRate: 30,
+            selectivity: 10,
+            redepositionRate: 50,
+            redepositionEnabled: true
+        };
+
+        this.timeStep = 0;
+        this.isRunning = false;
+        this.speed = 5;
+
+        this.metrics = {
+            etchDepth: 0,
+            edgeDepth: 0,
+            aspectRatio: 0,
+            sidewallAngle: 90,
+            etchRate: 0,
+            microloadingPercent: 0
+        };
+
+        this.surfaceCells = [];
+        this.features = [];
+        this.maskBottom = 0;
+        this.baseExposedArea = 0;
+
+        this.reset();
+    }
+
+    reset() {
+        this.timeStep = 0;
+        this.isRunning = false;
+
+        const config = {
+            gridWidth: this.gridWidth,
+            gridHeight: this.gridHeight,
+            cellSize: this.cellSize,
+            ...this.patternParams
+        };
+
+        this.grid = createPattern(config);
+        this.etchAccumulator = new Float32Array(this.gridWidth * this.gridHeight);
+        this.depositionAccumulator = new Float32Array(this.gridWidth * this.gridHeight);
+        this.passivation = new Float32Array(this.gridWidth * this.gridHeight);
+        this.etchRates = new Float32Array(this.gridWidth * this.gridHeight);
+        this.cumulativeEtched = 0;
+
+        this.features = getFeaturePositions(config);
+        this.maskBottom = Math.floor(this.gridHeight * 0.3) +
+                          Math.round(this.patternParams.maskThickness / this.cellSize);
+        this.baseExposedArea = calculateExposedArea(this.grid, this.gridWidth, this.gridHeight);
+
+        this.updateMetrics();
+    }
+
+    setPatternParams(params) {
+        Object.assign(this.patternParams, params);
+        this.reset();
+    }
+
+    setParams(params) {
+        Object.assign(this.params, params);
+    }
+
+    findFeatureForCell(x) {
+        for (const feature of this.features) {
+            if (x >= feature.startX && x < feature.endX) {
+                return feature;
+            }
+        }
+
+        let nearestFeature = null;
+        let minDistance = Infinity;
+        const maxDistance = 50;
+
+        for (const feature of this.features) {
+            let distance;
+            if (x < feature.startX) {
+                distance = feature.startX - x;
+            } else if (x >= feature.endX) {
+                distance = x - feature.endX + 1;
+            } else {
+                distance = 0;
+            }
+
+            if (distance < minDistance && distance <= maxDistance) {
+                minDistance = distance;
+                nearestFeature = feature;
+            }
+        }
+
+        return nearestFeature;
+    }
+
+    calculateMicroloadingFactor(featureWidthNm) {
+        if (!featureWidthNm || featureWidthNm <= 0) return 1.0;
+
+        const ratio = featureWidthNm / this.referenceWidth;
+        const factor = Math.pow(ratio, 1.5);
+
+        return Math.max(0.02, Math.min(1.0, factor));
+    }
+
+    step() {
+        this.surfaceCells = findSurfaceCells(this.grid, this.gridWidth, this.gridHeight);
+        if (this.surfaceCells.length === 0) return;
+
+        const totalExposedArea = this.surfaceCells.length;
+        const loadingFactor = 1 / (1 + 0.2 * Math.max(0, (totalExposedArea - this.baseExposedArea) / Math.max(1, this.baseExposedArea)));
+
+        for (const cell of this.surfaceCells) {
+            const ionFlux = this.calculateIonFlux(cell);
+            cell.isHorizontal = cell.normalY < -0.6;
+            cell.isSidewall = Math.abs(cell.normalX) > 0.6;
+            cell.ionFlux = ionFlux;
+        }
+
+        for (const cell of this.surfaceCells) {
+            const idx = cell.y * this.gridWidth + cell.x;
+            const ardeFactor = calculateARDEFactor(cell.x, cell.y, this.grid, this.gridWidth, this.maskBottom);
+
+            const feature = this.findFeatureForCell(cell.x);
+            const microloadingFactor = feature ? this.calculateMicroloadingFactor(feature.widthNm) : 1.0;
+
+            const baseIonRate = (this.params.ionFlux / 100) * ardeFactor * microloadingFactor;
+            const baseChemRate = (this.params.chemicalRate / 100) * loadingFactor * ardeFactor * microloadingFactor;
+
+            let etchRate = 0;
+
+            if (cell.isHorizontal) {
+                if (cell.ionFlux > 0.01) {
+                    etchRate = cell.ionFlux * baseIonRate * 1.5 + baseChemRate * 0.3;
+                }
+            } else if (cell.isSidewall) {
+                if (cell.material === Material.REDEPOSIT) {
+                    etchRate = 0;
+                } else {
+                    etchRate = baseChemRate * 0.01;
+                }
+            } else {
+                etchRate = baseIonRate * 0.1 + baseChemRate * 0.02;
+            }
+
+            if (cell.material === Material.MASK) {
+                etchRate /= this.params.selectivity;
+            } else if (cell.material === Material.REDEPOSIT && cell.isHorizontal) {
+                if (cell.ionFlux > 0.05) {
+                    etchRate = cell.ionFlux * baseIonRate * 2.0;
+                } else {
+                    etchRate = 0;
+                }
+            }
+
+            cell.etchRate = Math.max(0, etchRate);
+        }
+
+        const cellsEtched = this.applyEtching();
+        this.applyDeposition(cellsEtched);
+        this.timeStep++;
+        this.updateMetrics();
+    }
+
+    calculateIonFlux(cell) {
+        if (cell.normalY > -0.2) return 0;
+
+        const angularSpread = this.params.angularSpread * Math.PI / 180;
+
+        let verticalClear = true;
+        for (let y = cell.y - 1; y >= 0; y--) {
+            if (this.grid[y * this.gridWidth + cell.x] !== Material.EMPTY) {
+                verticalClear = false;
+                break;
+            }
+        }
+
+        if (verticalClear) {
+            return Math.max(0, -cell.normalY);
+        }
+
+        if (angularSpread > 0.01) {
+            const tanAngle = Math.tan(angularSpread);
+            for (const dir of [-1, 1]) {
+                let canReach = true;
+                for (let dy = 1; dy < 200; dy++) {
+                    const checkY = cell.y - dy;
+                    const checkX = Math.round(cell.x + dir * dy * tanAngle);
+                    if (checkY < 0) break;
+                    if (checkX < 0 || checkX >= this.gridWidth) { canReach = false; break; }
+                    if (this.grid[checkY * this.gridWidth + checkX] !== Material.EMPTY) {
+                        canReach = false;
+                        break;
+                    }
+                }
+                if (canReach) return 0.1 * Math.max(0, -cell.normalY);
+            }
+        }
+
+        return 0;
+    }
+
+    applyDeposition(cellsEtched) {
+        const redepRate = this.params.redepositionEnabled ? this.params.redepositionRate / 100 : 0;
+        if (redepRate < 0.01) return;
+
+        this.cumulativeEtched += cellsEtched;
+
+        const depositThreshold = 285 / redepRate;
+
+        if (this.cumulativeEtched < depositThreshold) return;
+
+        this.cumulativeEtched = 0;
+
+        const newGrid = new Uint8Array(this.grid);
+
+        for (const cell of this.surfaceCells) {
+            if (!cell.isSidewall) continue;
+
+            const feature = this.findFeatureForCell(cell.x);
+            if (!feature) continue;
+
+            const featureCenter = feature.centerX;
+            const towardCenter = cell.x < featureCenter ? 1 : -1;
+            const adjacentX = cell.x + towardCenter;
+
+            if (adjacentX < 0 || adjacentX >= this.gridWidth) continue;
+
+            const adjacentIdx = cell.y * this.gridWidth + adjacentX;
+
+            if (this.grid[adjacentIdx] !== Material.EMPTY) continue;
+
+            newGrid[adjacentIdx] = Material.REDEPOSIT;
+        }
+
+        this.grid = newGrid;
+    }
+
+    applyEtching() {
+        this.etchRates.fill(0);
+        const newGrid = new Uint8Array(this.grid);
+        const threshold = 0.5;
+        let cellsEtched = 0;
+
+        for (const cell of this.surfaceCells) {
+            const idx = cell.y * this.gridWidth + cell.x;
+            this.etchRates[idx] = cell.etchRate;
+
+            if (cell.etchRate <= 0) continue;
+
+            this.etchAccumulator[idx] += cell.etchRate * 0.15;
+
+            if (this.etchAccumulator[idx] >= threshold) {
+                newGrid[idx] = Material.EMPTY;
+                this.etchAccumulator[idx] = 0;
+                this.passivation[idx] = 0;
+                cellsEtched++;
+            }
+        }
+
+        this.grid = newGrid;
+        return cellsEtched;
+    }
+
+    updateMetrics() {
+        if (this.features.length === 0) return;
+
+        const featureDepths = this.features.map(feature => ({
+            feature,
+            depthCells: measureEtchDepth(
+                this.grid, this.gridWidth, this.gridHeight,
+                feature.centerX, this.maskBottom
+            ),
+            widthNm: feature.widthNm || this.patternParams.featureWidth
+        }));
+
+        let narrowestFeature = featureDepths[0];
+        let widestFeature = featureDepths[0];
+        for (const fd of featureDepths) {
+            if (fd.widthNm < narrowestFeature.widthNm) narrowestFeature = fd;
+            if (fd.widthNm > widestFeature.widthNm) widestFeature = fd;
+        }
+
+        const centerIdx = Math.floor(this.features.length / 2);
+        const centerFeature = this.features[centerIdx];
+        const centerDepth = featureDepths[centerIdx];
+
+        this.metrics.etchDepth = centerDepth.depthCells * this.cellSize;
+
+        const narrowDepth = narrowestFeature.depthCells * this.cellSize;
+        const wideDepth = widestFeature.depthCells * this.cellSize;
+
+        this.metrics.narrowDepth = narrowDepth;
+        this.metrics.wideDepth = wideDepth;
+        this.metrics.narrowWidth = narrowestFeature.widthNm;
+        this.metrics.wideWidth = widestFeature.widthNm;
+
+        if (wideDepth > 0 && narrowestFeature.widthNm !== widestFeature.widthNm) {
+            const diff = wideDepth - narrowDepth;
+            this.metrics.microloadingPercent = (diff / wideDepth) * 100;
+        } else {
+            this.metrics.microloadingPercent = 0;
+        }
+
+        this.metrics.edgeDepth = featureDepths[0].depthCells * this.cellSize;
+
+        const featureWidthNm = centerDepth.widthNm;
+        this.metrics.aspectRatio = featureWidthNm > 0
+            ? (this.metrics.etchDepth / featureWidthNm).toFixed(1)
+            : 0;
+
+        this.metrics.sidewallAngle = measureSidewallAngle(
+            this.grid, this.gridWidth, centerFeature, this.maskBottom
+        );
+
+        if (this.timeStep > 0 && this.surfaceCells.length > 0) {
+            const avgRate = this.surfaceCells.reduce((sum, c) => sum + Math.max(0, c.etchRate || 0), 0)
+                          / this.surfaceCells.length;
+            this.metrics.etchRate = (avgRate * this.cellSize).toFixed(2);
+        }
+    }
+
+    getState() {
+        return {
+            grid: this.grid,
+            etchRates: this.etchRates,
+            passivation: this.passivation,
+            width: this.gridWidth,
+            height: this.gridHeight,
+            cellSize: this.cellSize,
+            timeStep: this.timeStep,
+            metrics: { ...this.metrics },
+            features: this.features,
+            maskBottom: this.maskBottom,
+            surfaceCells: this.surfaceCells
+        };
+    }
+}
+
+// ==================== RENDERER.JS ====================
+class Renderer {
+    constructor(canvas) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+
+        this.showGrid = false;
+        this.showFlux = false;
+
+        this.colors = {
+            [Material.EMPTY]: '#1a1a2e',
+            [Material.SUBSTRATE]: '#3f51b5',
+            [Material.MASK]: '#607d8b',
+            [Material.REDEPOSIT]: '#ff9800',
+            background: '#0d0d1a',
+            grid: 'rgba(255, 255, 255, 0.1)',
+            fluxPositive: 'rgba(255, 100, 100, 0.6)',
+            fluxNegative: 'rgba(100, 255, 100, 0.6)',
+            depthMarker: '#e94560',
+            scale: '#ffffff'
+        };
+
+        this.imageData = null;
+        this.scale = 2;
+    }
+
+    render(state) {
+        const { grid, width, height, etchRates, passivation, cellSize, features, maskBottom } = state;
+
+        const canvasWidth = width * this.scale;
+        const canvasHeight = height * this.scale;
+
+        if (this.canvas.width !== canvasWidth || this.canvas.height !== canvasHeight) {
+            this.canvas.width = canvasWidth;
+            this.canvas.height = canvasHeight;
+            this.imageData = null;
+        }
+
+        if (!this.imageData) {
+            this.imageData = this.ctx.createImageData(canvasWidth, canvasHeight);
+        }
+
+        const data = this.imageData.data;
+
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const idx = y * width + x;
+                const material = grid[idx];
+                let color = this.hexToRgb(this.colors[material]);
+
+                if (passivation && passivation[idx] > 0.01 && material === Material.SUBSTRATE) {
+                    const p = Math.min(1, passivation[idx] / 3.0);
+                    color = {
+                        r: Math.round(color.r + (255 - color.r) * p * 0.8),
+                        g: Math.round(color.g + (150 - color.g) * p * 0.8),
+                        b: Math.round(color.b * (1 - p * 0.9))
+                    };
+                }
+
+                for (let sy = 0; sy < this.scale; sy++) {
+                    for (let sx = 0; sx < this.scale; sx++) {
+                        const px = x * this.scale + sx;
+                        const py = y * this.scale + sy;
+                        const pidx = (py * canvasWidth + px) * 4;
+
+                        data[pidx] = color.r;
+                        data[pidx + 1] = color.g;
+                        data[pidx + 2] = color.b;
+                        data[pidx + 3] = 255;
+                    }
+                }
+            }
+        }
+
+        this.ctx.putImageData(this.imageData, 0, 0);
+
+        this.drawScaleBar(cellSize, canvasWidth, canvasHeight);
+        this.drawDepthMarkers(features, maskBottom, cellSize, state.metrics);
+    }
+
+    drawScaleBar(cellSize, canvasWidth, canvasHeight) {
+        const scaleLength = 100;
+        const scaleCells = scaleLength / cellSize;
+        const scalePixels = scaleCells * this.scale;
+
+        const x = canvasWidth - scalePixels - 20;
+        const y = canvasHeight - 20;
+
+        this.ctx.strokeStyle = this.colors.scale;
+        this.ctx.lineWidth = 2;
+
+        this.ctx.beginPath();
+        this.ctx.moveTo(x, y);
+        this.ctx.lineTo(x + scalePixels, y);
+        this.ctx.stroke();
+
+        this.ctx.beginPath();
+        this.ctx.moveTo(x, y - 5);
+        this.ctx.lineTo(x, y + 5);
+        this.ctx.moveTo(x + scalePixels, y - 5);
+        this.ctx.lineTo(x + scalePixels, y + 5);
+        this.ctx.stroke();
+
+        this.ctx.fillStyle = this.colors.scale;
+        this.ctx.font = '12px sans-serif';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText(`${scaleLength} nm`, x + scalePixels / 2, y - 8);
+    }
+
+    drawDepthMarkers(features, maskBottom, cellSize, metrics) {
+        if (!features || features.length === 0) return;
+
+        const centerFeature = features[Math.floor(features.length / 2)];
+        const x = centerFeature.centerX * this.scale;
+        const yTop = maskBottom * this.scale;
+        const depthPixels = (metrics.etchDepth / cellSize) * this.scale;
+
+        if (depthPixels < 5) return;
+
+        this.ctx.strokeStyle = this.colors.depthMarker;
+        this.ctx.lineWidth = 1;
+        this.ctx.setLineDash([4, 2]);
+
+        this.ctx.beginPath();
+        this.ctx.moveTo(x, yTop);
+        this.ctx.lineTo(x, yTop + depthPixels);
+        this.ctx.stroke();
+
+        this.ctx.setLineDash([]);
+
+        const arrowSize = 4;
+        this.ctx.fillStyle = this.colors.depthMarker;
+
+        this.ctx.beginPath();
+        this.ctx.moveTo(x, yTop);
+        this.ctx.lineTo(x - arrowSize, yTop + arrowSize);
+        this.ctx.lineTo(x + arrowSize, yTop + arrowSize);
+        this.ctx.fill();
+
+        this.ctx.beginPath();
+        this.ctx.moveTo(x, yTop + depthPixels);
+        this.ctx.lineTo(x - arrowSize, yTop + depthPixels - arrowSize);
+        this.ctx.lineTo(x + arrowSize, yTop + depthPixels - arrowSize);
+        this.ctx.fill();
+
+        if (depthPixels > 30) {
+            this.ctx.fillStyle = this.colors.depthMarker;
+            this.ctx.font = 'bold 11px sans-serif';
+            this.ctx.textAlign = 'left';
+            this.ctx.fillText(`${metrics.etchDepth.toFixed(0)} nm`, x + 8, yTop + depthPixels / 2 + 4);
+        }
+    }
+
+    hexToRgb(hex) {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16)
+        } : { r: 0, g: 0, b: 0 };
+    }
+
+    setOptions(options) {
+        if (options.showGrid !== undefined) this.showGrid = options.showGrid;
+        if (options.showFlux !== undefined) this.showFlux = options.showFlux;
+    }
+}
+
+// ==================== MAIN.JS ====================
+class App {
+    constructor() {
+        this.simulation = new Simulation();
+        this.renderer = new Renderer(document.getElementById('simCanvas'));
+
+        this.isRunning = false;
+        this.animationId = null;
+        this.lastFrameTime = 0;
+
+        this.bindControls();
+        this.render();
+    }
+
+    bindControls() {
+        this.bindSlider('ionEnergy', 'ionEnergyValue', (v) => {
+            this.simulation.setParams({ ionEnergy: v });
+        }, ' eV');
+
+        this.bindSlider('ionFlux', 'ionFluxValue', (v) => {
+            this.simulation.setParams({ ionFlux: v });
+        }, '%');
+
+        this.bindSlider('angularSpread', 'angularSpreadValue', (v) => {
+            this.simulation.setParams({ angularSpread: v });
+        }, 'deg');
+
+        this.bindSlider('chemicalRate', 'chemicalRateValue', (v) => {
+            this.simulation.setParams({ chemicalRate: v });
+        }, '%');
+
+        this.bindSlider('selectivity', 'selectivityValue', (v) => {
+            this.simulation.setParams({ selectivity: v });
+        }, ':1');
+
+        this.bindCheckbox('redepositionEnabled', (v) => {
+            this.simulation.setParams({ redepositionEnabled: v });
+        });
+
+        this.bindSlider('redepositionRate', 'redepositionRateValue', (v) => {
+            this.simulation.setParams({ redepositionRate: v });
+        }, '%');
+
+        this.bindSlider('numFeatures', 'numFeaturesValue', (v) => {
+            this.simulation.setPatternParams({ numFeatures: v });
+            this.render();
+        });
+
+        this.bindSlider('featureWidth', 'featureWidthValue', (v) => {
+            this.simulation.setPatternParams({ featureWidth: v });
+            this.render();
+        }, ' nm');
+
+        this.bindSlider('featureSpacing', 'featureSpacingValue', (v) => {
+            this.simulation.setPatternParams({ featureSpacing: v });
+            this.render();
+        }, ' nm');
+
+        this.bindSlider('maskThickness', 'maskThicknessValue', (v) => {
+            this.simulation.setPatternParams({ maskThickness: v });
+            this.render();
+        }, ' nm');
+
+        const variableWidthsCheckbox = document.getElementById('variableWidths');
+        const numFeaturesSlider = document.getElementById('numFeatures');
+        const featureWidthSlider = document.getElementById('featureWidth');
+
+        if (variableWidthsCheckbox) {
+            variableWidthsCheckbox.addEventListener('change', () => {
+                const v = variableWidthsCheckbox.checked;
+
+                if (v) {
+                    this.simulation.setPatternParams({
+                        variableWidths: [10, 50, 150],
+                        numFeatures: 3,
+                        featureSpacing: 40
+                    });
+                    if (numFeaturesSlider) numFeaturesSlider.disabled = true;
+                    if (featureWidthSlider) featureWidthSlider.disabled = true;
+                } else {
+                    this.simulation.setPatternParams({
+                        variableWidths: null,
+                        featureSpacing: 60
+                    });
+                    if (numFeaturesSlider) numFeaturesSlider.disabled = false;
+                    if (featureWidthSlider) featureWidthSlider.disabled = false;
+                }
+                this.render();
+            });
+        }
+
+        this.bindSlider('simSpeed', 'simSpeedValue', (v) => {
+            this.simulation.speed = v;
+        });
+
+        const playBtn = document.getElementById('playBtn');
+        playBtn.addEventListener('click', () => this.togglePlay());
+
+        const stepBtn = document.getElementById('stepBtn');
+        stepBtn.addEventListener('click', () => this.step());
+
+        const resetBtn = document.getElementById('resetBtn');
+        resetBtn.addEventListener('click', () => this.reset());
+    }
+
+    bindSlider(sliderId, valueId, callback, suffix = '', formatter = null) {
+        const slider = document.getElementById(sliderId);
+        const valueDisplay = document.getElementById(valueId);
+
+        if (!slider || !valueDisplay) return;
+
+        const updateValue = () => {
+            const value = parseFloat(slider.value);
+            const displayValue = formatter ? formatter(value) : value;
+            valueDisplay.textContent = displayValue + suffix;
+            callback(value);
+        };
+
+        slider.addEventListener('input', updateValue);
+        updateValue();
+    }
+
+    bindCheckbox(checkboxId, callback) {
+        const checkbox = document.getElementById(checkboxId);
+        if (!checkbox) return;
+
+        checkbox.addEventListener('change', () => {
+            callback(checkbox.checked);
+        });
+        callback(checkbox.checked);
+    }
+
+    togglePlay() {
+        this.isRunning = !this.isRunning;
+        const playBtn = document.getElementById('playBtn');
+        playBtn.textContent = this.isRunning ? 'Pause' : 'Play';
+        playBtn.classList.toggle('btn-primary', !this.isRunning);
+
+        if (this.isRunning) {
+            this.lastFrameTime = performance.now();
+            this.animate();
+        } else {
+            if (this.animationId) {
+                cancelAnimationFrame(this.animationId);
+                this.animationId = null;
+            }
+        }
+    }
+
+    step() {
+        if (this.isRunning) {
+            this.togglePlay();
+        }
+        this.simulation.step();
+        this.render();
+    }
+
+    reset() {
+        if (this.isRunning) {
+            this.togglePlay();
+        }
+        this.simulation.reset();
+        this.render();
+    }
+
+    animate() {
+        if (!this.isRunning) return;
+
+        const now = performance.now();
+        const deltaTime = now - this.lastFrameTime;
+
+        const stepsPerFrame = this.simulation.speed;
+        const frameInterval = 50;
+
+        if (deltaTime >= frameInterval) {
+            for (let i = 0; i < stepsPerFrame; i++) {
+                this.simulation.step();
+            }
+            this.render();
+            this.lastFrameTime = now;
+        }
+
+        this.animationId = requestAnimationFrame(() => this.animate());
+    }
+
+    render() {
+        const state = this.simulation.getState();
+        this.renderer.render(state);
+        this.updateInfoPanel(state.metrics, state.timeStep);
+    }
+
+    updateInfoPanel(metrics, timeStep) {
+        document.getElementById('etchDepth').textContent = `${metrics.etchDepth.toFixed(1)} nm`;
+        document.getElementById('aspectRatio').textContent = `${metrics.aspectRatio}:1`;
+        document.getElementById('timeStep').textContent = timeStep;
+
+        const wideDepthEl = document.getElementById('wideDepth');
+        const narrowDepthEl = document.getElementById('narrowDepth');
+        const microloadingEl = document.getElementById('microloading');
+
+        if (wideDepthEl && metrics.wideDepth !== undefined) {
+            const widthLabel = metrics.wideWidth ? ` (${metrics.wideWidth}nm)` : '';
+            wideDepthEl.textContent = `${metrics.wideDepth.toFixed(1)} nm${widthLabel}`;
+        }
+
+        if (narrowDepthEl && metrics.narrowDepth !== undefined) {
+            const widthLabel = metrics.narrowWidth ? ` (${metrics.narrowWidth}nm)` : '';
+            narrowDepthEl.textContent = `${metrics.narrowDepth.toFixed(1)} nm${widthLabel}`;
+        }
+
+        if (microloadingEl && metrics.microloadingPercent !== undefined) {
+            microloadingEl.textContent = `${metrics.microloadingPercent.toFixed(1)}%`;
+        }
+    }
+}
+
+// Initialize application when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    window.app = new App();
+});
+    </script>
+</body>
+</html>

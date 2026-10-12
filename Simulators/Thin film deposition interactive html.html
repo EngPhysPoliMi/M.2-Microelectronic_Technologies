@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thin Film Deposition in Trenches</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #eee;
+        }
+        h1 {
+            text-align: center;
+            color: #fff;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 20px;
+            font-size: 0.95em;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .controls {
+            flex: 1;
+            min-width: 300px;
+            background: #16213e;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .visualization {
+            flex: 2;
+            min-width: 450px;
+        }
+        .control-group {
+            margin-bottom: 20px;
+        }
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #4cc9f0;
+        }
+        .control-group input[type="range"] {
+            width: 100%;
+            margin-bottom: 5px;
+        }
+        .value-display {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9em;
+            color: #aaa;
+        }
+        .current-value {
+            color: #f72585;
+            font-weight: bold;
+        }
+        canvas {
+            display: block;
+            background: #000;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .canvas-label {
+            text-align: center;
+            color: #888;
+            font-size: 0.85em;
+            margin-bottom: 15px;
+        }
+        .info-box {
+            background: #0f0f23;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 0.85em;
+            line-height: 1.6;
+        }
+        .info-box h3 {
+            color: #4cc9f0;
+            margin: 0 0 10px 0;
+            font-size: 0.95em;
+        }
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #222;
+        }
+        .metric:last-child {
+            border-bottom: none;
+        }
+        .metric-label {
+            color: #888;
+        }
+        .metric-value {
+            color: #4cc9f0;
+            font-weight: bold;
+        }
+        .metric-value.good {
+            color: #4ade80;
+        }
+        .metric-value.poor {
+            color: #f87171;
+        }
+        .formula {
+            background: #0f0f23;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+        }
+        .legend {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85em;
+            color: #aaa;
+        }
+        .legend-color {
+            width: 20px;
+            height: 12px;
+            border-radius: 2px;
+        }
+        .help-text {
+            color: #666;
+            font-size: 0.8em;
+            margin-top: 5px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <h1>Thin Film Deposition Conformality</h1>
+    <p class="subtitle">Effect of arrival angle distribution (cos<sup>n</sup>θ) and sticking coefficient on trench coverage</p>
+
+    <div class="container">
+        <div class="controls">
+            <div class="control-group">
+                <label>Angular Distribution Exponent (n)</label>
+                <input type="range" id="exponent" min="1" max="20" value="1" step="0.5">
+                <div class="value-display">
+                    <span>1 (diffuse)</span>
+                    <span class="current-value" id="exponent-value">n = 1</span>
+                    <span>20 (directional)</span>
+                </div>
+                <p class="help-text">Higher n = more directional flux (e.g., sputtering). n=1 is Knudsen/effusive source.</p>
+            </div>
+
+            <div class="control-group">
+                <label>Sticking Coefficient (s)</label>
+                <input type="range" id="sticking" min="0.05" max="1" value="1" step="0.05">
+                <div class="value-display">
+                    <span>0.05</span>
+                    <span class="current-value" id="sticking-value">s = 1.00</span>
+                    <span>1.0</span>
+                </div>
+                <p class="help-text">s=1: molecules stick on first contact. Lower s allows redistribution via bouncing.</p>
+            </div>
+
+            <div class="control-group">
+                <label>Trench Aspect Ratio (Depth/Width)</label>
+                <input type="range" id="aspect-ratio" min="0.5" max="10" value="3" step="0.25">
+                <div class="value-display">
+                    <span>0.5</span>
+                    <span class="current-value" id="aspect-ratio-value">AR = 3.0</span>
+                    <span>10</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Film Thickness (nominal)</label>
+                <input type="range" id="thickness" min="5" max="30" value="15" step="1">
+                <div class="value-display">
+                    <span>5%</span>
+                    <span class="current-value" id="thickness-value">15% of width</span>
+                    <span>30%</span>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <h3>Conformality Metrics</h3>
+                <div class="metric">
+                    <span class="metric-label">Step Coverage (bottom/top):</span>
+                    <span class="metric-value" id="step-coverage">--</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Sidewall Coverage (mid/top):</span>
+                    <span class="metric-value" id="sidewall-coverage">--</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Bottom Corner Thickness:</span>
+                    <span class="metric-value" id="corner-coverage">--</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Overhang Ratio:</span>
+                    <span class="metric-value" id="overhang-ratio">--</span>
+                </div>
+            </div>
+
+            <div class="formula">
+                <span style="color:#4cc9f0">Flux distribution:</span> F(θ) ∝ cos<sup>n</sup>(θ)
+                <br><br>
+                <span style="color:#888">θ = angle from surface normal</span>
+                <br>
+                <span style="color:#888">s = sticking probability per collision</span>
+            </div>
+        </div>
+
+        <div class="visualization">
+            <canvas id="trenchCanvas" width="550" height="450"></canvas>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #4a5568;"></div>
+                    <span>Substrate</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(90deg, #f59e0b, #fbbf24);"></div>
+                    <span>Deposited Film</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #3b82f6;"></div>
+                    <span>Incoming Flux</span>
+                </div>
+            </div>
+
+            <canvas id="profileCanvas" width="550" height="200"></canvas>
+            <p class="canvas-label">Normalized thickness profile along trench surface (left wall → bottom → right wall)</p>
+        </div>
+    </div>
+
+    <script>
+        // Canvas setup
+        const trenchCanvas = document.getElementById('trenchCanvas');
+        const trenchCtx = trenchCanvas.getContext('2d');
+        const profileCanvas = document.getElementById('profileCanvas');
+        const profileCtx = profileCanvas.getContext('2d');
+
+        // Controls
+        const exponentSlider = document.getElementById('exponent');
+        const stickingSlider = document.getElementById('sticking');
+        const aspectRatioSlider = document.getElementById('aspect-ratio');
+        const thicknessSlider = document.getElementById('thickness');
+
+        // Simulation parameters
+        const NUM_SEGMENTS = 100;  // Number of surface segments for simulation
+        const MAX_BOUNCES = 200;   // Maximum iterations for flux redistribution
+
+        // Calculate direct flux from source at angle theta (from vertical)
+        // for a surface with local normal at angle phi from vertical
+        function directFlux(theta, n) {
+            // cos^n distribution from vertical
+            return Math.pow(Math.cos(theta), n);
+        }
+
+        // Calculate the incoming flux at a point on the trench surface
+        // considering shadowing from the trench walls
+        function calculateDirectFluxAtPoint(x, y, trenchWidth, trenchDepth, n) {
+            // x: horizontal position (-trenchWidth/2 to trenchWidth/2)
+            // y: depth (0 at top, trenchDepth at bottom)
+            // Returns: {flux: number, surfaceNormal: {x, y}}
+
+            const halfWidth = trenchWidth / 2;
+            let totalFlux = 0;
+            const numAngles = 180;
+
+            // Determine surface normal based on position
+            let normalX = 0, normalY = -1; // Default: horizontal surface facing up
+
+            // Integrate over all incoming angles
+            for (let i = 0; i < numAngles; i++) {
+                // Angle from vertical (-pi/2 to pi/2)
+                const theta = (i / (numAngles - 1) - 0.5) * Math.PI;
+
+                // Check if this angle is blocked by trench walls
+                let blocked = false;
+
+                // Ray from point (x, y) going upward at angle theta
+                // Check intersection with both walls
+                if (y > 0) {  // Only check if we're inside the trench
+                    // Left wall at x = -halfWidth
+                    if (theta < 0) {  // Ray going left
+                        const tanTheta = Math.tan(theta);
+                        const yAtLeftWall = y + (x + halfWidth) / (-tanTheta);
+                        if (yAtLeftWall > 0) blocked = true;
+                    }
+                    // Right wall at x = halfWidth
+                    if (theta > 0) {  // Ray going right
+                        const tanTheta = Math.tan(theta);
+                        const yAtRightWall = y + (halfWidth - x) / tanTheta;
+                        if (yAtRightWall > 0) blocked = true;
+                    }
+                }
+
+                if (!blocked) {
+                    // Flux contribution: cos^n(theta) * cos(angle of incidence)
+                    const flux = directFlux(theta, n);
+
+                    // Angle of incidence depends on surface orientation
+                    // For bottom: normal is (0, -1), incidence angle = |theta|
+                    // For walls: need to compute properly
+                    const cosIncidence = Math.cos(theta) * (-normalY) + Math.sin(theta) * normalX;
+
+                    if (cosIncidence > 0) {
+                        totalFlux += flux * cosIncidence;
+                    }
+                }
+            }
+
+            return totalFlux / numAngles;
+        }
+
+        // Calculate flux for each segment of the trench with time-stepped simulation
+        // This allows for void formation when overhangs meet
+        function calculateTrenchFlux(aspectRatio, n, sticking) {
+            const trenchWidth = 1.0;
+            const trenchDepth = aspectRatio * trenchWidth;
+
+            // Create surface segments: left wall, bottom, right wall
+            const segmentsPerSide = Math.floor(NUM_SEGMENTS / 3);
+            const segments = [];
+
+            // Left wall (from top to bottom)
+            for (let i = 0; i < segmentsPerSide; i++) {
+                const y = (i + 0.5) / segmentsPerSide * trenchDepth;
+                segments.push({
+                    x: -trenchWidth / 2,
+                    y: y,
+                    normalX: 1,
+                    normalY: 0,
+                    type: 'left',
+                    baseX: -trenchWidth / 2  // Original substrate position
+                });
+            }
+
+            // Bottom (from left to right)
+            for (let i = 0; i < segmentsPerSide; i++) {
+                const x = -trenchWidth / 2 + (i + 0.5) / segmentsPerSide * trenchWidth;
+                segments.push({
+                    x: x,
+                    y: trenchDepth,
+                    normalX: 0,
+                    normalY: -1,
+                    type: 'bottom',
+                    baseY: trenchDepth
+                });
+            }
+
+            // Right wall (from bottom to top)
+            for (let i = 0; i < segmentsPerSide; i++) {
+                const y = trenchDepth - (i + 0.5) / segmentsPerSide * trenchDepth;
+                segments.push({
+                    x: trenchWidth / 2,
+                    y: y,
+                    normalX: -1,
+                    normalY: 0,
+                    type: 'right',
+                    baseX: trenchWidth / 2
+                });
+            }
+
+            // Add top surfaces (field regions)
+            const topSegments = Math.floor(NUM_SEGMENTS / 6);
+            for (let i = 0; i < topSegments; i++) {
+                segments.unshift({
+                    x: -trenchWidth / 2 - (topSegments - i) * 0.1,
+                    y: 0,
+                    normalX: 0,
+                    normalY: -1,
+                    type: 'top-left',
+                    baseY: 0
+                });
+                segments.push({
+                    x: trenchWidth / 2 + (i + 1) * 0.1,
+                    y: 0,
+                    normalX: 0,
+                    normalY: -1,
+                    type: 'top-right',
+                    baseY: 0
+                });
+            }
+
+            const numSegments = segments.length;
+            const deposited = new Array(numSegments).fill(0);
+
+            // Calculate steady-state flux for each segment
+            const directFluxes = segments.map(seg => {
+                return calculateDirectFluxForSegment(seg, trenchWidth, trenchDepth, n);
+            });
+
+            // Apply sticking coefficient with chamber return model
+            let incomingFlux = [...directFluxes];
+            const chamberWeights = new Array(numSegments).fill(1.0 / numSegments);
+
+            for (let bounce = 0; bounce < MAX_BOUNCES; bounce++) {
+                let chamberFlux = 0;
+
+                for (let i = 0; i < numSegments; i++) {
+                    const flux = incomingFlux[i];
+                    deposited[i] += sticking * flux;
+                    chamberFlux += (1 - sticking) * flux;
+                }
+
+                if (chamberFlux < 0.0001) break;
+
+                for (let i = 0; i < numSegments; i++) {
+                    incomingFlux[i] = chamberFlux * chamberWeights[i];
+                }
+            }
+
+            return { segments, deposited };
+        }
+
+        // Calculate direct flux for a single segment
+        function calculateDirectFluxForSegment(segment, trenchWidth, trenchDepth, n) {
+            const halfWidth = trenchWidth / 2;
+            let totalFlux = 0;
+            const numAngles = 90;
+
+            for (let i = 0; i < numAngles; i++) {
+                const theta = (i / (numAngles - 1) - 0.5) * Math.PI;
+
+                let blocked = false;
+
+                if (segment.y > 0.001) {
+                    // Check left wall blocking
+                    if (theta < 0 && segment.x > -halfWidth + 0.001) {
+                        const dx = segment.x + halfWidth;
+                        const dy = dx / Math.tan(-theta);
+                        if (segment.y - dy > 0.001) blocked = true;
+                    }
+                    // Check right wall blocking
+                    if (theta > 0 && segment.x < halfWidth - 0.001) {
+                        const dx = halfWidth - segment.x;
+                        const dy = dx / Math.tan(theta);
+                        if (segment.y - dy > 0.001) blocked = true;
+                    }
+                }
+
+                if (!blocked) {
+                    const flux = Math.pow(Math.cos(theta), n);
+                    // Angle of incidence on surface
+                    const cosIncidence = -Math.sin(theta) * segment.normalX + Math.cos(theta) * (-segment.normalY);
+                    if (cosIncidence > 0) {
+                        totalFlux += flux * cosIncidence;
+                    }
+                }
+            }
+
+            return totalFlux / numAngles * 2;  // Normalize
+        }
+
+        // Draw the trench visualization
+        function drawTrench(segments, deposited, aspectRatio, nominalThickness) {
+            const width = trenchCanvas.width;
+            const height = trenchCanvas.height;
+            const padding = 50;
+
+            // Clear canvas
+            trenchCtx.fillStyle = '#0a0a1a';
+            trenchCtx.fillRect(0, 0, width, height);
+
+            // Calculate scaling
+            const trenchWidth = 1.0;
+            const trenchDepth = aspectRatio * trenchWidth;
+
+            const availableWidth = width - 2 * padding;
+            const availableHeight = height - 2 * padding - 60;
+
+            const scaleX = availableWidth / 3;
+            const scaleY = availableHeight / (trenchDepth + 0.5);
+            const scale = Math.min(scaleX, scaleY);
+
+            const centerX = width / 2;
+            const topY = padding + 40;
+
+            // Convert coordinates
+            const toScreenX = (x) => centerX + x * scale;
+            const toScreenY = (y) => topY + y * scale;
+
+            // Draw incoming flux arrows showing cos^n(θ) angular distribution
+            const n = parseFloat(exponentSlider.value);
+            const arrowOriginY = topY - 70;
+            const maxArrowLength = 50;
+
+            // Draw arrows at different angles to show the distribution
+            const numArrows = 13;  // Odd number for symmetry with center arrow
+            const maxAngle = Math.PI / 2.5;  // ±72 degrees from vertical
+
+            for (let i = 0; i < numArrows; i++) {
+                // Angle from vertical (-maxAngle to +maxAngle)
+                const theta = (i / (numArrows - 1) - 0.5) * 2 * maxAngle;
+
+                // Arrow length proportional to cos^n(theta)
+                const intensity = Math.pow(Math.cos(theta), n);
+                const arrowLength = maxArrowLength * Math.max(0.1, intensity);
+
+                // Arrow direction (pointing downward at angle theta from vertical)
+                const dirX = Math.sin(theta);
+                const dirY = Math.cos(theta);
+
+                // Arrow start and end points
+                const startX = centerX;
+                const startY = arrowOriginY;
+                const endX = centerX + dirX * arrowLength;
+                const endY = arrowOriginY + dirY * arrowLength;
+
+                // Color/opacity based on intensity
+                const alpha = 0.3 + 0.7 * intensity;
+                trenchCtx.strokeStyle = `rgba(59, 130, 246, ${alpha})`;
+                trenchCtx.lineWidth = 1.5 + intensity * 1.5;
+
+                // Draw arrow line
+                trenchCtx.beginPath();
+                trenchCtx.moveTo(startX, startY);
+                trenchCtx.lineTo(endX, endY);
+                trenchCtx.stroke();
+
+                // Draw arrowhead
+                const headSize = 4 + intensity * 3;
+                const headAngle = Math.atan2(dirY, dirX);
+                trenchCtx.beginPath();
+                trenchCtx.moveTo(endX, endY);
+                trenchCtx.lineTo(
+                    endX - headSize * Math.cos(headAngle - 0.4),
+                    endY - headSize * Math.sin(headAngle - 0.4)
+                );
+                trenchCtx.lineTo(
+                    endX - headSize * Math.cos(headAngle + 0.4),
+                    endY - headSize * Math.sin(headAngle + 0.4)
+                );
+                trenchCtx.closePath();
+                trenchCtx.fillStyle = `rgba(59, 130, 246, ${alpha})`;
+                trenchCtx.fill();
+            }
+
+            // Label
+            trenchCtx.fillStyle = '#3b82f6';
+            trenchCtx.font = '12px Segoe UI';
+            trenchCtx.textAlign = 'center';
+            trenchCtx.fillText(`cos${n > 1 ? '^' + n.toFixed(1) : ''}(θ) flux`, centerX, arrowOriginY - 12);
+
+            // Draw substrate
+            trenchCtx.fillStyle = '#4a5568';
+            trenchCtx.fillRect(toScreenX(-1.5), topY, scale * 1, scale * (trenchDepth + 0.3));
+            trenchCtx.fillRect(toScreenX(0.5), topY, scale * 1, scale * (trenchDepth + 0.3));
+            trenchCtx.fillRect(toScreenX(-0.5), toScreenY(trenchDepth), scale, scale * 0.3);
+
+            // Find max deposited for normalization
+            const maxDeposited = Math.max(...deposited);
+            const filmScale = nominalThickness / 100 * scale / maxDeposited;
+
+            // Separate segments by type
+            const topLeftSegs = segments.map((s, i) => ({s, d: deposited[i]})).filter(({s}) => s.type === 'top-left');
+            const leftSegs = segments.map((s, i) => ({s, d: deposited[i]})).filter(({s}) => s.type === 'left');
+            const bottomSegs = segments.map((s, i) => ({s, d: deposited[i]})).filter(({s}) => s.type === 'bottom');
+            const rightSegs = segments.map((s, i) => ({s, d: deposited[i]})).filter(({s}) => s.type === 'right');
+            const topRightSegs = segments.map((s, i) => ({s, d: deposited[i]})).filter(({s}) => s.type === 'top-right');
+
+            // Get film thickness at key points for corners
+            const topLeftFieldThickness = topLeftSegs.length > 0 ? topLeftSegs[topLeftSegs.length - 1].d * filmScale : 0;
+            const topRightFieldThickness = topRightSegs.length > 0 ? topRightSegs[0].d * filmScale : 0;
+            const leftWallTopThickness = leftSegs.length > 0 ? leftSegs[0].d * filmScale : 0;
+            const rightWallTopThickness = rightSegs.length > 0 ? rightSegs[rightSegs.length - 1].d * filmScale : 0;
+
+            const filmGradient = trenchCtx.createLinearGradient(0, topY, 0, toScreenY(trenchDepth));
+            filmGradient.addColorStop(0, '#fbbf24');
+            filmGradient.addColorStop(1, '#f59e0b');
+
+            // Draw left field film (simple rectangle)
+            if (topLeftSegs.length > 0) {
+                const avgThickness = topLeftSegs.reduce((sum, {d}) => sum + d, 0) / topLeftSegs.length * filmScale;
+                trenchCtx.fillStyle = '#fbbf24';
+                trenchCtx.fillRect(
+                    toScreenX(-1.5),
+                    topY - avgThickness,
+                    toScreenX(-0.5) - toScreenX(-1.5),
+                    avgThickness
+                );
+            }
+
+            // Draw right field film (simple rectangle)
+            if (topRightSegs.length > 0) {
+                const avgThickness = topRightSegs.reduce((sum, {d}) => sum + d, 0) / topRightSegs.length * filmScale;
+                trenchCtx.fillStyle = '#fbbf24';
+                trenchCtx.fillRect(
+                    toScreenX(0.5),
+                    topY - avgThickness,
+                    toScreenX(1.5) - toScreenX(0.5),
+                    avgThickness
+                );
+            }
+
+            // Draw trench interior film with proper corners
+            trenchCtx.fillStyle = filmGradient;
+            trenchCtx.beginPath();
+
+            // Start at top-left corner of trench (substrate surface)
+            const trenchLeftX = toScreenX(-0.5);
+            const trenchRightX = toScreenX(0.5);
+            const trenchBottomY = toScreenY(trenchDepth);
+
+            // Outer path (film surface) - go clockwise
+            // Start from top-left corner, going down the left wall
+            trenchCtx.moveTo(trenchLeftX - leftWallTopThickness, topY - topLeftFieldThickness);
+
+            // Down the left wall
+            for (const {s, d} of leftSegs) {
+                const thickness = d * filmScale;
+                trenchCtx.lineTo(toScreenX(s.x) + thickness, toScreenY(s.y));
+            }
+
+            // Across the bottom
+            for (const {s, d} of bottomSegs) {
+                const thickness = d * filmScale;
+                trenchCtx.lineTo(toScreenX(s.x), toScreenY(s.y) - thickness);
+            }
+
+            // Up the right wall
+            for (const {s, d} of rightSegs) {
+                const thickness = d * filmScale;
+                trenchCtx.lineTo(toScreenX(s.x) - thickness, toScreenY(s.y));
+            }
+
+            // Connect to top-right corner
+            trenchCtx.lineTo(trenchRightX + rightWallTopThickness, topY - topRightFieldThickness);
+
+            // Now go back along the substrate surface (inner path)
+            trenchCtx.lineTo(trenchRightX, topY);
+            trenchCtx.lineTo(trenchRightX, trenchBottomY);
+            trenchCtx.lineTo(trenchLeftX, trenchBottomY);
+            trenchCtx.lineTo(trenchLeftX, topY);
+
+            trenchCtx.closePath();
+            trenchCtx.fill();
+
+            // Draw substrate outline
+            trenchCtx.strokeStyle = '#666';
+            trenchCtx.lineWidth = 2;
+            trenchCtx.beginPath();
+            trenchCtx.moveTo(toScreenX(-1.5), topY);
+            trenchCtx.lineTo(toScreenX(-0.5), topY);
+            trenchCtx.lineTo(toScreenX(-0.5), toScreenY(trenchDepth));
+            trenchCtx.lineTo(toScreenX(0.5), toScreenY(trenchDepth));
+            trenchCtx.lineTo(toScreenX(0.5), topY);
+            trenchCtx.lineTo(toScreenX(1.5), topY);
+            trenchCtx.stroke();
+
+            // Labels
+            trenchCtx.fillStyle = '#888';
+            trenchCtx.font = '11px Segoe UI';
+            trenchCtx.textAlign = 'center';
+            trenchCtx.fillText('W', centerX, toScreenY(trenchDepth) + 25);
+
+            trenchCtx.save();
+            trenchCtx.translate(toScreenX(0.7), toScreenY(trenchDepth / 2));
+            trenchCtx.rotate(-Math.PI / 2);
+            trenchCtx.fillText('D = ' + aspectRatio.toFixed(1) + 'W', 0, 0);
+            trenchCtx.restore();
+        }
+
+        // Draw the thickness profile graph
+        function drawProfile(segments, deposited) {
+            const width = profileCanvas.width;
+            const height = profileCanvas.height;
+            const padding = { left: 50, right: 20, top: 20, bottom: 35 };
+
+            // Clear canvas
+            profileCtx.fillStyle = '#0a0a1a';
+            profileCtx.fillRect(0, 0, width, height);
+
+            const graphWidth = width - padding.left - padding.right;
+            const graphHeight = height - padding.top - padding.bottom;
+
+            // Draw axes
+            profileCtx.strokeStyle = '#444';
+            profileCtx.lineWidth = 1;
+            profileCtx.beginPath();
+            profileCtx.moveTo(padding.left, padding.top);
+            profileCtx.lineTo(padding.left, height - padding.bottom);
+            profileCtx.lineTo(width - padding.right, height - padding.bottom);
+            profileCtx.stroke();
+
+            // Grid lines
+            profileCtx.strokeStyle = '#222';
+            profileCtx.setLineDash([2, 4]);
+            for (let i = 1; i <= 4; i++) {
+                const y = padding.top + graphHeight * (1 - i / 4);
+                profileCtx.beginPath();
+                profileCtx.moveTo(padding.left, y);
+                profileCtx.lineTo(width - padding.right, y);
+                profileCtx.stroke();
+            }
+            profileCtx.setLineDash([]);
+
+            // Y-axis labels
+            profileCtx.fillStyle = '#888';
+            profileCtx.font = '10px Segoe UI';
+            profileCtx.textAlign = 'right';
+            for (let i = 0; i <= 4; i++) {
+                const y = padding.top + graphHeight * (1 - i / 4);
+                profileCtx.fillText((i * 25) + '%', padding.left - 5, y + 4);
+            }
+
+            // X-axis labels
+            profileCtx.textAlign = 'center';
+            profileCtx.fillText('Left Wall', padding.left + graphWidth * 0.15, height - 10);
+            profileCtx.fillText('Bottom', padding.left + graphWidth * 0.5, height - 10);
+            profileCtx.fillText('Right Wall', padding.left + graphWidth * 0.85, height - 10);
+
+            // Y-axis title
+            profileCtx.save();
+            profileCtx.translate(12, height / 2);
+            profileCtx.rotate(-Math.PI / 2);
+            profileCtx.fillText('Normalized Thickness', 0, 0);
+            profileCtx.restore();
+
+            // Find max for normalization (use top surface as reference)
+            const topIndices = segments.map((s, i) => ({ s, i }))
+                .filter(({ s }) => s.type === 'top-left' || s.type === 'top-right');
+            const topAvg = topIndices.length > 0
+                ? topIndices.reduce((sum, { i }) => sum + deposited[i], 0) / topIndices.length
+                : Math.max(...deposited);
+
+            // Filter to just trench segments
+            const trenchData = segments.map((s, i) => ({ s, d: deposited[i] }))
+                .filter(({ s }) => s.type === 'left' || s.type === 'bottom' || s.type === 'right');
+
+            // Draw profile
+            const gradient = profileCtx.createLinearGradient(padding.left, 0, width - padding.right, 0);
+            gradient.addColorStop(0, '#f59e0b');
+            gradient.addColorStop(0.33, '#fbbf24');
+            gradient.addColorStop(0.5, '#fcd34d');
+            gradient.addColorStop(0.67, '#fbbf24');
+            gradient.addColorStop(1, '#f59e0b');
+
+            profileCtx.strokeStyle = gradient;
+            profileCtx.lineWidth = 3;
+            profileCtx.beginPath();
+
+            trenchData.forEach(({ d }, i) => {
+                const x = padding.left + (i / (trenchData.length - 1)) * graphWidth;
+                const normalized = topAvg > 0 ? d / topAvg : 0;
+                const y = padding.top + graphHeight * (1 - Math.min(normalized, 1));
+
+                if (i === 0) {
+                    profileCtx.moveTo(x, y);
+                } else {
+                    profileCtx.lineTo(x, y);
+                }
+            });
+
+            profileCtx.stroke();
+
+            // Fill under curve
+            profileCtx.lineTo(width - padding.right, height - padding.bottom);
+            profileCtx.lineTo(padding.left, height - padding.bottom);
+            profileCtx.closePath();
+
+            const fillGradient = profileCtx.createLinearGradient(0, padding.top, 0, height - padding.bottom);
+            fillGradient.addColorStop(0, 'rgba(251, 191, 36, 0.3)');
+            fillGradient.addColorStop(1, 'rgba(251, 191, 36, 0.05)');
+            profileCtx.fillStyle = fillGradient;
+            profileCtx.fill();
+
+            // Draw 100% reference line
+            profileCtx.strokeStyle = '#4ade80';
+            profileCtx.lineWidth = 1;
+            profileCtx.setLineDash([5, 5]);
+            profileCtx.beginPath();
+            profileCtx.moveTo(padding.left, padding.top);
+            profileCtx.lineTo(width - padding.right, padding.top);
+            profileCtx.stroke();
+            profileCtx.setLineDash([]);
+
+            profileCtx.fillStyle = '#4ade80';
+            profileCtx.textAlign = 'left';
+            profileCtx.fillText('100% (field)', width - padding.right - 70, padding.top - 5);
+
+            // Draw section dividers
+            profileCtx.strokeStyle = '#444';
+            profileCtx.setLineDash([3, 3]);
+            const div1 = padding.left + graphWidth / 3;
+            const div2 = padding.left + 2 * graphWidth / 3;
+            profileCtx.beginPath();
+            profileCtx.moveTo(div1, padding.top);
+            profileCtx.lineTo(div1, height - padding.bottom);
+            profileCtx.moveTo(div2, padding.top);
+            profileCtx.lineTo(div2, height - padding.bottom);
+            profileCtx.stroke();
+            profileCtx.setLineDash([]);
+        }
+
+        // Calculate and display conformality metrics
+        function updateMetrics(segments, deposited) {
+            // Find reference (top surface average)
+            const topData = segments.map((s, i) => ({ s, d: deposited[i] }))
+                .filter(({ s }) => s.type === 'top-left' || s.type === 'top-right');
+            const topAvg = topData.length > 0
+                ? topData.reduce((sum, { d }) => sum + d, 0) / topData.length
+                : 1;
+
+            // Bottom average
+            const bottomData = segments.map((s, i) => ({ s, d: deposited[i] }))
+                .filter(({ s }) => s.type === 'bottom');
+            const bottomAvg = bottomData.reduce((sum, { d }) => sum + d, 0) / bottomData.length;
+
+            // Sidewall data
+            const leftData = segments.map((s, i) => ({ s, d: deposited[i], i }))
+                .filter(({ s }) => s.type === 'left');
+            const rightData = segments.map((s, i) => ({ s, d: deposited[i], i }))
+                .filter(({ s }) => s.type === 'right');
+
+            // Sidewall mid-point
+            const leftMid = leftData[Math.floor(leftData.length / 2)]?.d || 0;
+            const rightMid = rightData[Math.floor(rightData.length / 2)]?.d || 0;
+            const sidewallMid = (leftMid + rightMid) / 2;
+
+            // Top of sidewall (near opening)
+            const leftTop = leftData[0]?.d || 0;
+            const rightTop = rightData[rightData.length - 1]?.d || 0;
+            const sidewallTop = (leftTop + rightTop) / 2;
+
+            // Bottom corners
+            const leftBottomCorner = leftData[leftData.length - 1]?.d || 0;
+            const rightBottomCorner = rightData[0]?.d || 0;
+            const cornerAvg = (leftBottomCorner + rightBottomCorner) / 2;
+
+            // Calculate metrics
+            const stepCoverage = (bottomAvg / topAvg * 100).toFixed(1);
+            const sidewallCoverage = (sidewallMid / topAvg * 100).toFixed(1);
+            const cornerCoverage = (cornerAvg / topAvg * 100).toFixed(1);
+            const overhang = (sidewallTop / sidewallMid).toFixed(2);
+
+            // Update display
+            const scEl = document.getElementById('step-coverage');
+            scEl.textContent = stepCoverage + '%';
+            scEl.className = 'metric-value ' + (parseFloat(stepCoverage) > 80 ? 'good' : parseFloat(stepCoverage) < 50 ? 'poor' : '');
+
+            const swEl = document.getElementById('sidewall-coverage');
+            swEl.textContent = sidewallCoverage + '%';
+            swEl.className = 'metric-value ' + (parseFloat(sidewallCoverage) > 80 ? 'good' : parseFloat(sidewallCoverage) < 50 ? 'poor' : '');
+
+            const ccEl = document.getElementById('corner-coverage');
+            ccEl.textContent = cornerCoverage + '%';
+            ccEl.className = 'metric-value ' + (parseFloat(cornerCoverage) > 70 ? 'good' : parseFloat(cornerCoverage) < 40 ? 'poor' : '');
+
+            const ohEl = document.getElementById('overhang-ratio');
+            ohEl.textContent = overhang + 'x';
+            ohEl.className = 'metric-value ' + (parseFloat(overhang) < 1.5 ? 'good' : parseFloat(overhang) > 2 ? 'poor' : '');
+        }
+
+        // Update displays
+        function updateDisplays() {
+            const n = parseFloat(exponentSlider.value);
+            const s = parseFloat(stickingSlider.value);
+            const ar = parseFloat(aspectRatioSlider.value);
+            const t = parseFloat(thicknessSlider.value);
+
+            document.getElementById('exponent-value').textContent = 'n = ' + n.toFixed(1);
+            document.getElementById('sticking-value').textContent = 's = ' + s.toFixed(2);
+            document.getElementById('aspect-ratio-value').textContent = 'AR = ' + ar.toFixed(2);
+            document.getElementById('thickness-value').textContent = t + '% of width';
+        }
+
+        // Main update function
+        function update() {
+            updateDisplays();
+
+            const n = parseFloat(exponentSlider.value);
+            const s = parseFloat(stickingSlider.value);
+            const ar = parseFloat(aspectRatioSlider.value);
+            const t = parseFloat(thicknessSlider.value);
+
+            const { segments, deposited } = calculateTrenchFlux(ar, n, s);
+
+            drawTrench(segments, deposited, ar, t);
+            drawProfile(segments, deposited);
+            updateMetrics(segments, deposited);
+        }
+
+        // Event listeners
+        exponentSlider.addEventListener('input', update);
+        stickingSlider.addEventListener('input', update);
+        aspectRatioSlider.addEventListener('input', update);
+        thicknessSlider.addEventListener('input', update);
+
+        // Initial draw
+        update();
+    </script>
+</body>
+</html>

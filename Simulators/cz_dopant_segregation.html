@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CZ Silicon Crystal Growth - Dopant Segregation</title>
+    <style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    min-height: 100vh;
+    color: #e0e0e0;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+header h1 {
+    font-size: 1.8rem;
+    color: #4fc3f7;
+    margin-bottom: 5px;
+}
+
+header .subtitle {
+    font-size: 0.95rem;
+    color: #90a4ae;
+}
+
+.main-content {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.control-panel {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 20px;
+    width: 260px;
+    flex-shrink: 0;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.control-panel h2 {
+    font-size: 1.1rem;
+    color: #4fc3f7;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.control-group {
+    margin-bottom: 15px;
+}
+
+.control-group label {
+    display: block;
+    font-size: 0.85rem;
+    color: #b0bec5;
+    margin-bottom: 6px;
+}
+
+select {
+    width: 100%;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    color: #e0e0e0;
+    font-size: 0.9rem;
+    cursor: pointer;
+    outline: none;
+}
+
+select:focus {
+    border-color: #4fc3f7;
+}
+
+select option {
+    background: #1a1a2e;
+    color: #e0e0e0;
+}
+
+.slider-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+input[type="range"] {
+    flex: 1;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #4fc3f7;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: #4fc3f7;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+}
+
+.value-display {
+    font-size: 0.8rem;
+    color: #4fc3f7;
+    min-width: 40px;
+    text-align: right;
+    font-family: 'Consolas', 'Monaco', monospace;
+}
+
+.button-group {
+    display: flex;
+    gap: 10px;
+}
+
+.btn {
+    flex: 1;
+    padding: 10px;
+    background: #4fc3f7;
+    color: #1a1a2e;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+}
+
+.btn:hover {
+    background: #81d4fa;
+    transform: translateY(-1px);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn.secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: #e0e0e0;
+}
+
+.btn.secondary:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 15px 0;
+}
+
+.info-panel {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.info-row:last-child {
+    margin-bottom: 0;
+}
+
+.info-label {
+    font-size: 0.8rem;
+    color: #90a4ae;
+}
+
+.info-value {
+    font-size: 0.85rem;
+    color: #4fc3f7;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-weight: 600;
+}
+
+.dopant-info {
+    background: rgba(79, 195, 247, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 15px;
+}
+
+.dopant-info .dopant-name {
+    font-size: 1rem;
+    color: #4fc3f7;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.dopant-info .dopant-type {
+    font-size: 0.8rem;
+    color: #90a4ae;
+}
+
+.visualization-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.canvas-container {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    padding: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.canvas-container h3 {
+    font-size: 0.9rem;
+    color: #90a4ae;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+#cz-canvas {
+    width: 100%;
+    height: 350px;
+    display: block;
+    border-radius: 8px;
+}
+
+#profile-canvas {
+    width: 100%;
+    height: 200px;
+    display: block;
+    border-radius: 8px;
+}
+
+.equation-box {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 10px;
+    margin-top: 15px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.75rem;
+    color: #90a4ae;
+    text-align: center;
+}
+
+.equation-box .equation {
+    color: #4fc3f7;
+    font-size: 0.85rem;
+}
+
+footer {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.legend {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: #90a4ae;
+}
+
+.color-bar {
+    width: 60px;
+    height: 12px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, #1565c0, #4fc3f7, #ffeb3b, #ff5722);
+}
+
+@media (max-width: 900px) {
+    .main-content {
+        flex-direction: column;
+    }
+
+    .control-panel {
+        width: 100%;
+    }
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Dopant Segregation in Czochralski Crystal Growth</h1>
+            <p class="subtitle">Visualization of dopant distribution during silicon ingot pulling</p>
+        </header>
+
+        <div class="main-content">
+            <aside class="control-panel">
+                <h2>Parameters</h2>
+
+                <div class="control-group">
+                    <label for="dopant-select">Select Dopant</label>
+                    <select id="dopant-select">
+                        <option value="B">Boron (B) - p-type</option>
+                        <option value="P">Phosphorus (P) - n-type</option>
+                        <option value="As">Arsenic (As) - n-type</option>
+                        <option value="Sb">Antimony (Sb) - n-type</option>
+                        <option value="C">Carbon (C)</option>
+                        <option value="O">Oxygen (O)</option>
+                        <option value="Ge">Germanium (Ge)</option>
+                        <option value="Hyp">Hypothetical (k > 1)</option>
+                    </select>
+                </div>
+
+                <div class="dopant-info">
+                    <div class="dopant-name" id="dopant-name">Boron (B)</div>
+                    <div class="dopant-type" id="dopant-type">p-type dopant</div>
+                </div>
+
+                <div class="control-group">
+                    <label>Segregation Coefficient (k)</label>
+                    <div class="info-value" id="k-value" style="font-size: 1.2rem; text-align: center; padding: 8px 0;">0.80</div>
+                </div>
+
+                <div class="control-group">
+                    <label for="speed">Animation Speed</label>
+                    <div class="slider-container">
+                        <input type="range" id="speed" min="0.5" max="3" value="1" step="0.1">
+                        <span class="value-display"><span id="speed-value">1.0</span>x</span>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button id="play-btn" class="btn">Pause</button>
+                    <button id="reset-btn" class="btn secondary">Reset</button>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="info-panel">
+                    <div class="info-row">
+                        <span class="info-label">Fraction Solidified:</span>
+                        <span class="info-value" id="fraction-value">0%</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Crystal Cs/C0:</span>
+                        <span class="info-value" id="cs-value">0.80</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Melt Cl/C0:</span>
+                        <span class="info-value" id="cl-value">1.00</span>
+                    </div>
+                </div>
+
+                <div class="equation-box">
+                    <div>Scheil Equation:</div>
+                    <div class="equation">Cs/C0 = k (1-g)<sup>k-1</sup></div>
+                    <div class="equation-values" id="equation-values" style="margin-top: 8px; font-size: 0.8rem; color: #4fc3f7;"></div>
+                </div>
+            </aside>
+
+            <main class="visualization-area">
+                <div class="canvas-container">
+                    <h3>Crystal Growth Cross-Section</h3>
+                    <canvas id="cz-canvas"></canvas>
+                </div>
+                <div class="canvas-container">
+                    <h3>Dopant Concentration Profile Along Crystal</h3>
+                    <canvas id="profile-canvas"></canvas>
+                </div>
+            </main>
+        </div>
+
+        <footer>
+            <div class="legend">
+                <span class="legend-item">Concentration: <span class="color-bar"></span> Low to High</span>
+                <span class="legend-item">k &lt; 1: increases seed → tail (melt enriches)</span>
+                <span class="legend-item">k &gt; 1: decreases seed → tail (melt depletes)</span>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+// Dopant data with segregation coefficients
+const DOPANTS = {
+    B:  { name: 'Boron (B)',      symbol: 'B',  k: 0.80,  type: 'p-type dopant' },
+    P:  { name: 'Phosphorus (P)', symbol: 'P',  k: 0.35,  type: 'n-type dopant' },
+    As: { name: 'Arsenic (As)',   symbol: 'As', k: 0.30,  type: 'n-type dopant' },
+    Sb: { name: 'Antimony (Sb)',  symbol: 'Sb', k: 0.023, type: 'n-type dopant' },
+    C:  { name: 'Carbon (C)',     symbol: 'C',  k: 0.07,  type: 'impurity' },
+    O:  { name: 'Oxygen (O)',     symbol: 'O',  k: 1.00,  type: 'impurity' },
+    Ge: { name: 'Germanium (Ge)', symbol: 'Ge', k: 0.33,  type: 'isoelectronic' },
+    Hyp: { name: 'Hypothetical (k>1)', symbol: '?', k: 1.50, type: 'k > 1 example' }
+};
+
+/**
+ * Physics calculations for dopant segregation
+ */
+class SegregationPhysics {
+    constructor() {
+        this.k = 0.80; // Default: Boron
+    }
+
+    setSegregationCoefficient(k) {
+        this.k = k;
+    }
+
+    /**
+     * Scheil equation for solid concentration
+     * Cs/C0 = k * (1 - g)^(k-1)
+     */
+    getSolidConcentration(g) {
+        if (g >= 0.999) return this.k * Math.pow(0.001, this.k - 1);
+        return this.k * Math.pow(1 - g, this.k - 1);
+    }
+
+    /**
+     * Liquid concentration
+     * Cl/C0 = (1 - g)^(k-1)
+     */
+    getLiquidConcentration(g) {
+        if (g >= 0.999) return Math.pow(0.001, this.k - 1);
+        return Math.pow(1 - g, this.k - 1);
+    }
+
+    /**
+     * Get color for concentration ratio
+     * Maps concentration relative to k and expected range to show full gradient
+     * Handles both k < 1 (concentration increases) and k > 1 (concentration decreases)
+     */
+    getConcentrationColor(ratio) {
+        // Calculate expected min and max based on k
+        // At g=0: Cs/C0 = k
+        // At g=0.95: Cs/C0 = k * (0.05)^(k-1)
+        const atSeed = this.k;
+        const atTail = this.k * Math.pow(0.05, this.k - 1);
+
+        let minC, maxC;
+        if (this.k <= 1) {
+            // k <= 1: concentration increases along crystal (min at seed, max at tail)
+            minC = atSeed;
+            maxC = Math.max(atSeed * 1.5, atTail);
+        } else {
+            // k > 1: concentration decreases along crystal (max at seed, min at tail)
+            minC = Math.min(atSeed * 0.5, atTail);
+            maxC = atSeed;
+        }
+
+        // Clamp ratio to expected range
+        const r = Math.max(minC * 0.9, Math.min(maxC * 1.1, ratio));
+
+        // Normalize to 0-1 range (0 = min concentration, 1 = max concentration)
+        let t;
+        if (maxC > minC) {
+            const normalized = (r - minC) / (maxC - minC);
+            // Use power function for better visual spread
+            t = Math.pow(Math.max(0, Math.min(1, normalized)), 0.6);
+        } else {
+            t = 0.5;
+        }
+
+        // Color gradient: deep blue (low) -> cyan -> green -> yellow -> orange (high)
+        if (t < 0.2) {
+            const s = t / 0.2;
+            return `rgb(${Math.round(20 + s * 25)}, ${Math.round(80 + s * 70)}, ${Math.round(180 + s * 20)})`;
+        } else if (t < 0.4) {
+            const s = (t - 0.2) / 0.2;
+            return `rgb(${Math.round(45 + s * 35)}, ${Math.round(150 + s * 50)}, ${Math.round(200 + s * 47)})`;
+        } else if (t < 0.6) {
+            const s = (t - 0.4) / 0.2;
+            return `rgb(${Math.round(80 + s * 100)}, ${Math.round(200 + s * 30)}, ${Math.round(247 - s * 147)})`;
+        } else if (t < 0.8) {
+            const s = (t - 0.6) / 0.2;
+            return `rgb(${Math.round(180 + s * 75)}, ${Math.round(230 + s * 10)}, ${Math.round(100 - s * 60)})`;
+        } else {
+            const s = (t - 0.8) / 0.2;
+            return `rgb(${Math.round(255)}, ${Math.round(240 - s * 140)}, ${Math.round(40 - s * 20)})`;
+        }
+    }
+}
+
+/**
+ * CZ Crystal Growth Renderer
+ */
+class CZRenderer {
+    constructor(canvas, physics) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.physics = physics;
+
+        this.colors = {
+            background: '#0d1117',
+            crucible: '#5d6d7e',
+            crucibleInner: '#2c3e50',
+            seed: '#a0a0a0',
+            interface: '#ffffff',
+            text: '#e0e0e0',
+            arrow: '#4fc3f7'
+        };
+
+        this.resize();
+    }
+
+    resize() {
+        const rect = this.canvas.parentElement.getBoundingClientRect();
+        this.canvas.width = rect.width - 30;
+        this.canvas.height = 350;
+
+        // CZ setup dimensions (relative to canvas)
+        this.centerX = this.canvas.width / 2;
+        this.crucibleTop = this.canvas.height * 0.55;
+        this.crucibleBottom = this.canvas.height * 0.92;
+        this.crucibleWidth = this.canvas.width * 0.5;
+        this.crystalWidth = this.canvas.width * 0.12;
+        this.seedHeight = 20;
+        this.maxCrystalHeight = this.crucibleTop - 60;
+    }
+
+    render(fractionSolidified) {
+        const ctx = this.ctx;
+        const g = fractionSolidified;
+
+        // Clear
+        ctx.fillStyle = this.colors.background;
+        ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Draw components
+        this.drawCrucible(ctx, g);
+        this.drawMelt(ctx, g);
+        this.drawCrystalAndSeed(ctx, g);
+        this.drawLabels(ctx, g);
+        this.drawPullArrow(ctx);
+    }
+
+    drawCrucible(ctx, g) {
+        const cx = this.centerX;
+        const top = this.crucibleTop;
+        const bottom = this.crucibleBottom;
+        const width = this.crucibleWidth;
+
+        // Outer crucible (trapezoid)
+        ctx.beginPath();
+        ctx.moveTo(cx - width/2 - 15, top - 10);
+        ctx.lineTo(cx - width/2 - 5, bottom);
+        ctx.lineTo(cx + width/2 + 5, bottom);
+        ctx.lineTo(cx + width/2 + 15, top - 10);
+        ctx.closePath();
+        ctx.fillStyle = this.colors.crucible;
+        ctx.fill();
+
+        // Inner crucible
+        ctx.beginPath();
+        ctx.moveTo(cx - width/2, top);
+        ctx.lineTo(cx - width/2 + 5, bottom - 5);
+        ctx.lineTo(cx + width/2 - 5, bottom - 5);
+        ctx.lineTo(cx + width/2, top);
+        ctx.closePath();
+        ctx.fillStyle = this.colors.crucibleInner;
+        ctx.fill();
+    }
+
+    drawMelt(ctx, g) {
+        const cx = this.centerX;
+        const top = this.crucibleTop;
+        const bottom = this.crucibleBottom - 5;
+        const width = this.crucibleWidth;
+
+        // Melt level decreases as crystal grows
+        const meltHeight = (bottom - top) * (1 - g);
+        const meltTop = bottom - meltHeight;
+
+        if (meltHeight <= 0) return;
+
+        // Get melt concentration color
+        const clRatio = this.physics.getLiquidConcentration(g);
+        const meltColor = this.physics.getConcentrationColor(clRatio);
+
+        // Draw melt
+        ctx.beginPath();
+        ctx.moveTo(cx - width/2 + 3, meltTop);
+        ctx.lineTo(cx - width/2 + 5, bottom);
+        ctx.lineTo(cx + width/2 - 5, bottom);
+        ctx.lineTo(cx + width/2 - 3, meltTop);
+        ctx.closePath();
+        ctx.fillStyle = meltColor;
+        ctx.fill();
+
+        // Melt surface highlight
+        ctx.beginPath();
+        ctx.moveTo(cx - width/2 + 3, meltTop);
+        ctx.lineTo(cx + width/2 - 3, meltTop);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Label
+        ctx.fillStyle = this.colors.text;
+        ctx.font = '11px -apple-system, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('Melt', cx + width/2 + 20, (meltTop + bottom) / 2);
+    }
+
+    drawCrystalAndSeed(ctx, g) {
+        const cx = this.centerX;
+        const width = this.crystalWidth;
+        const seedWidth = width * 0.3;
+        const shoulderHeight = 15;
+
+        // Initial melt surface position (at g=0)
+        const initialMeltSurface = this.crucibleTop;
+
+        // Current melt surface drops as crystal grows
+        const meltDrop = g * (this.crucibleBottom - 5 - this.crucibleTop);
+        const currentMeltSurface = initialMeltSurface + meltDrop * 0.3; // Melt drops slower than crystal rises
+
+        // Crystal bottom is just above current melt surface
+        const crystalBottom = currentMeltSurface - 5;
+
+        // Crystal height grows with g
+        const crystalHeight = g * this.maxCrystalHeight;
+        const crystalTop = crystalBottom - crystalHeight;
+
+        // Seed moves up as crystal grows - starts at initial melt surface
+        const seedBottom = crystalTop - shoulderHeight;
+        const seedTop = seedBottom - this.seedHeight;
+
+        // Draw seed first (at the top, moving up as crystal grows)
+        ctx.fillStyle = this.colors.seed;
+        ctx.fillRect(cx - seedWidth/2, seedTop, seedWidth, this.seedHeight);
+
+        // Seed holder
+        ctx.fillStyle = '#666';
+        ctx.fillRect(cx - seedWidth/4, seedTop - 10, seedWidth/2, 10);
+
+        // Label for seed
+        ctx.fillStyle = this.colors.text;
+        ctx.font = '10px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Seed', cx, seedTop - 15);
+
+        if (g <= 0) return;
+
+        // Draw shoulder (tapered section connecting seed to crystal body)
+        // Use initial concentration (g≈0) for shoulder - this is k*C0
+        const shoulderColor = this.physics.getConcentrationColor(this.physics.k);
+        ctx.beginPath();
+        ctx.moveTo(cx - seedWidth/2, seedBottom);
+        ctx.lineTo(cx - width/2, crystalTop);
+        ctx.lineTo(cx + width/2, crystalTop);
+        ctx.lineTo(cx + seedWidth/2, seedBottom);
+        ctx.closePath();
+        ctx.fillStyle = shoulderColor;
+        ctx.fill();
+
+        // Draw crystal body with concentration gradient
+        // TOP of crystal (near seed) = first solidified = LOW g = LOW Cs (for k<1)
+        // BOTTOM of crystal (near melt) = recently solidified = HIGH g = HIGH Cs (for k<1)
+        const numBands = Math.max(1, Math.floor(crystalHeight / 3));
+
+        for (let i = 0; i < numBands; i++) {
+            // i=0 is at the BOTTOM (near melt, high g, high concentration)
+            // i=numBands-1 is at the TOP (near seed, low g, low concentration)
+            // So bandG should DECREASE as i increases
+            const bandG = (1 - (i + 0.5) / numBands) * g;
+
+            const bandTop = crystalBottom - ((i + 1) / numBands) * crystalHeight;
+            const bandBottom = crystalBottom - (i / numBands) * crystalHeight;
+
+            const csRatio = this.physics.getSolidConcentration(bandG);
+            const color = this.physics.getConcentrationColor(csRatio);
+
+            ctx.fillStyle = color;
+            ctx.fillRect(cx - width/2, bandTop, width, bandBottom - bandTop + 1);
+        }
+
+        // Crystal outline
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(cx - width/2, crystalTop, width, crystalHeight);
+
+        // Interface line (solid-liquid boundary)
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(cx - width/2 - 5, crystalBottom);
+        ctx.lineTo(cx + width/2 + 5, crystalBottom);
+        ctx.stroke();
+
+        // Label for crystal
+        ctx.fillStyle = this.colors.text;
+        ctx.font = '11px -apple-system, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('Crystal', cx + width/2 + 15, (crystalTop + crystalBottom) / 2);
+    }
+
+    drawPullArrow(ctx) {
+        const cx = this.centerX;
+        const arrowX = cx + this.crystalWidth/2 + 40;
+        const arrowTop = 30;
+        const arrowBottom = 80;
+
+        ctx.strokeStyle = this.colors.arrow;
+        ctx.lineWidth = 2;
+
+        // Arrow shaft
+        ctx.beginPath();
+        ctx.moveTo(arrowX, arrowBottom);
+        ctx.lineTo(arrowX, arrowTop);
+        ctx.stroke();
+
+        // Arrow head
+        ctx.beginPath();
+        ctx.moveTo(arrowX, arrowTop);
+        ctx.lineTo(arrowX - 6, arrowTop + 10);
+        ctx.lineTo(arrowX + 6, arrowTop + 10);
+        ctx.closePath();
+        ctx.fillStyle = this.colors.arrow;
+        ctx.fill();
+
+        // Label
+        ctx.fillStyle = this.colors.text;
+        ctx.font = '10px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Pull', arrowX, arrowBottom + 15);
+    }
+
+    drawLabels(ctx, g) {
+        // Title for interface
+        if (g > 0 && g < 0.99) {
+            const cx = this.centerX;
+            const interfaceY = this.crucibleTop - 5;
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '10px -apple-system, sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText('Solid-Liquid Interface', cx - this.crystalWidth/2 - 10, interfaceY);
+        }
+    }
+}
+
+/**
+ * Concentration Profile Renderer
+ */
+class ProfileRenderer {
+    constructor(canvas, physics) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.physics = physics;
+
+        this.colors = {
+            background: '#0d1117',
+            grid: 'rgba(79, 195, 247, 0.1)',
+            axis: '#4fc3f7',
+            text: '#e0e0e0',
+            profile: '#4fc3f7',
+            profileFill: 'rgba(79, 195, 247, 0.2)',
+            reference: 'rgba(255, 255, 255, 0.3)',
+            marker: '#ff7043'
+        };
+
+        this.resize();
+    }
+
+    resize() {
+        const rect = this.canvas.parentElement.getBoundingClientRect();
+        this.canvas.width = rect.width - 30;
+        this.canvas.height = 200;
+
+        this.margin = { left: 60, right: 30, top: 25, bottom: 40 };
+        this.plotWidth = this.canvas.width - this.margin.left - this.margin.right;
+        this.plotHeight = this.canvas.height - this.margin.top - this.margin.bottom;
+    }
+
+    render(fractionSolidified) {
+        const ctx = this.ctx;
+        const g = fractionSolidified;
+
+        // Clear
+        ctx.fillStyle = this.colors.background;
+        ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Calculate max Y for scaling
+        const maxCs = this.getMaxConcentration();
+        const yMax = Math.max(2, Math.ceil(maxCs * 1.1));
+
+        this.drawGrid(ctx, yMax);
+        this.drawAxes(ctx, yMax);
+        this.drawReferenceLine(ctx, yMax);
+        this.drawProfile(ctx, g, yMax);
+        this.drawCurrentMarker(ctx, g, yMax);
+        this.drawLabels(ctx, yMax);
+    }
+
+    getMaxConcentration() {
+        // Calculate max concentration at g = 0.95
+        return this.physics.getSolidConcentration(0.95);
+    }
+
+    drawGrid(ctx, yMax) {
+        ctx.strokeStyle = this.colors.grid;
+        ctx.lineWidth = 1;
+
+        // Vertical lines
+        for (let i = 0; i <= 10; i++) {
+            const x = this.margin.left + (i / 10) * this.plotWidth;
+            ctx.beginPath();
+            ctx.moveTo(x, this.margin.top);
+            ctx.lineTo(x, this.margin.top + this.plotHeight);
+            ctx.stroke();
+        }
+
+        // Horizontal lines
+        const ySteps = Math.min(yMax, 10);
+        for (let i = 0; i <= ySteps; i++) {
+            const y = this.margin.top + this.plotHeight - (i / ySteps) * this.plotHeight;
+            ctx.beginPath();
+            ctx.moveTo(this.margin.left, y);
+            ctx.lineTo(this.margin.left + this.plotWidth, y);
+            ctx.stroke();
+        }
+    }
+
+    drawAxes(ctx, yMax) {
+        ctx.strokeStyle = this.colors.axis;
+        ctx.lineWidth = 2;
+
+        // Y-axis
+        ctx.beginPath();
+        ctx.moveTo(this.margin.left, this.margin.top);
+        ctx.lineTo(this.margin.left, this.margin.top + this.plotHeight);
+        ctx.stroke();
+
+        // X-axis
+        ctx.beginPath();
+        ctx.moveTo(this.margin.left, this.margin.top + this.plotHeight);
+        ctx.lineTo(this.margin.left + this.plotWidth, this.margin.top + this.plotHeight);
+        ctx.stroke();
+    }
+
+    drawReferenceLine(ctx, yMax) {
+        // Reference line at Cs/C0 = 1
+        const y = this.margin.top + this.plotHeight * (1 - 1 / yMax);
+
+        ctx.strokeStyle = this.colors.reference;
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(this.margin.left, y);
+        ctx.lineTo(this.margin.left + this.plotWidth, y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Label
+        ctx.fillStyle = this.colors.reference;
+        ctx.font = '10px -apple-system, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText('C0', this.margin.left - 5, y + 4);
+    }
+
+    drawProfile(ctx, currentG, yMax) {
+        if (currentG <= 0) return;
+
+        const numPoints = 200;
+
+        // Fill area under curve
+        ctx.beginPath();
+        ctx.moveTo(this.margin.left, this.margin.top + this.plotHeight);
+
+        for (let i = 0; i <= numPoints; i++) {
+            const g = (i / numPoints) * Math.min(currentG, 0.98);
+            const cs = this.physics.getSolidConcentration(g);
+
+            const x = this.margin.left + (g / 1) * this.plotWidth;
+            const y = this.margin.top + this.plotHeight * (1 - cs / yMax);
+
+            ctx.lineTo(x, Math.max(this.margin.top, y));
+        }
+
+        const lastG = Math.min(currentG, 0.98);
+        ctx.lineTo(this.margin.left + (lastG / 1) * this.plotWidth, this.margin.top + this.plotHeight);
+        ctx.closePath();
+        ctx.fillStyle = this.colors.profileFill;
+        ctx.fill();
+
+        // Draw line
+        ctx.beginPath();
+        for (let i = 0; i <= numPoints; i++) {
+            const g = (i / numPoints) * Math.min(currentG, 0.98);
+            const cs = this.physics.getSolidConcentration(g);
+
+            const x = this.margin.left + (g / 1) * this.plotWidth;
+            const y = this.margin.top + this.plotHeight * (1 - cs / yMax);
+
+            if (i === 0) {
+                ctx.moveTo(x, Math.max(this.margin.top, y));
+            } else {
+                ctx.lineTo(x, Math.max(this.margin.top, y));
+            }
+        }
+        ctx.strokeStyle = this.colors.profile;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    }
+
+    drawCurrentMarker(ctx, g, yMax) {
+        if (g <= 0 || g > 0.98) return;
+
+        const cs = this.physics.getSolidConcentration(g);
+        const x = this.margin.left + g * this.plotWidth;
+        const y = this.margin.top + this.plotHeight * (1 - cs / yMax);
+
+        // Vertical line
+        ctx.strokeStyle = this.colors.marker;
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(x, this.margin.top);
+        ctx.lineTo(x, this.margin.top + this.plotHeight);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Point
+        ctx.beginPath();
+        ctx.arc(x, Math.max(this.margin.top + 5, y), 5, 0, Math.PI * 2);
+        ctx.fillStyle = this.colors.marker;
+        ctx.fill();
+    }
+
+    drawLabels(ctx, yMax) {
+        ctx.fillStyle = this.colors.text;
+        ctx.font = '11px -apple-system, sans-serif';
+
+        // X-axis labels
+        ctx.textAlign = 'center';
+        ctx.fillText('Fraction Solidified (g)', this.margin.left + this.plotWidth / 2, this.canvas.height - 8);
+
+        for (let i = 0; i <= 10; i += 2) {
+            const x = this.margin.left + (i / 10) * this.plotWidth;
+            ctx.fillText((i * 10) + '%', x, this.margin.top + this.plotHeight + 18);
+        }
+
+        // Y-axis labels
+        ctx.textAlign = 'right';
+        const ySteps = Math.min(yMax, 5);
+        for (let i = 0; i <= ySteps; i++) {
+            const val = (i / ySteps) * yMax;
+            const y = this.margin.top + this.plotHeight - (i / ySteps) * this.plotHeight;
+            ctx.fillText(val.toFixed(1), this.margin.left - 8, y + 4);
+        }
+
+        // Y-axis title
+        ctx.save();
+        ctx.translate(15, this.margin.top + this.plotHeight / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.textAlign = 'center';
+        ctx.fillText('Cs / C0', 0, 0);
+        ctx.restore();
+
+        // Seed/End labels
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#90a4ae';
+        ctx.font = '10px -apple-system, sans-serif';
+        ctx.fillText('Seed', this.margin.left + 20, this.margin.top + this.plotHeight + 32);
+        ctx.fillText('End', this.margin.left + this.plotWidth - 20, this.margin.top + this.plotHeight + 32);
+    }
+}
+
+/**
+ * Main Application
+ */
+class CZApp {
+    constructor() {
+        this.physics = new SegregationPhysics();
+
+        this.czCanvas = document.getElementById('cz-canvas');
+        this.profileCanvas = document.getElementById('profile-canvas');
+
+        this.czRenderer = new CZRenderer(this.czCanvas, this.physics);
+        this.profileRenderer = new ProfileRenderer(this.profileCanvas, this.physics);
+
+        // Animation state
+        this.fractionSolidified = 0;
+        this.isPlaying = true;
+        this.speed = 1.0;
+        this.lastTime = 0;
+
+        // Current dopant
+        this.currentDopant = 'B';
+
+        this.setupControls();
+        this.setupEventListeners();
+        this.updateDopantInfo();
+        this.updateDisplay();
+
+        // Start animation
+        requestAnimationFrame(this.animate.bind(this));
+    }
+
+    setupControls() {
+        // Dopant selector
+        const dopantSelect = document.getElementById('dopant-select');
+        dopantSelect.addEventListener('change', () => {
+            this.currentDopant = dopantSelect.value;
+            this.physics.setSegregationCoefficient(DOPANTS[this.currentDopant].k);
+            this.updateDopantInfo();
+            this.reset();
+        });
+
+        // Speed slider
+        const speedSlider = document.getElementById('speed');
+        const speedValue = document.getElementById('speed-value');
+        speedSlider.addEventListener('input', () => {
+            this.speed = parseFloat(speedSlider.value);
+            speedValue.textContent = this.speed.toFixed(1);
+        });
+
+        // Play/Pause button
+        const playBtn = document.getElementById('play-btn');
+        playBtn.addEventListener('click', () => {
+            this.isPlaying = !this.isPlaying;
+            playBtn.textContent = this.isPlaying ? 'Pause' : 'Play';
+            if (this.isPlaying) {
+                this.lastTime = 0;
+                requestAnimationFrame(this.animate.bind(this));
+            }
+        });
+
+        // Reset button
+        const resetBtn = document.getElementById('reset-btn');
+        resetBtn.addEventListener('click', () => this.reset());
+    }
+
+    setupEventListeners() {
+        window.addEventListener('resize', () => {
+            this.czRenderer.resize();
+            this.profileRenderer.resize();
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                this.isPlaying = false;
+                document.getElementById('play-btn').textContent = 'Play';
+            }
+        });
+    }
+
+    updateDopantInfo() {
+        const dopant = DOPANTS[this.currentDopant];
+        document.getElementById('dopant-name').textContent = dopant.name;
+        document.getElementById('dopant-type').textContent = dopant.type;
+        document.getElementById('k-value').textContent = dopant.k.toFixed(dopant.k < 0.1 ? 3 : 2);
+    }
+
+    updateDisplay() {
+        const g = this.fractionSolidified;
+        const k = this.physics.k;
+        const cs = this.physics.getSolidConcentration(g);
+        const cl = this.physics.getLiquidConcentration(g);
+
+        document.getElementById('fraction-value').textContent = (g * 100).toFixed(1) + '%';
+        document.getElementById('cs-value').textContent = cs.toFixed(3);
+        document.getElementById('cl-value').textContent = cl.toFixed(3);
+
+        // Update equation with current values
+        const oneMinusG = (1 - g).toFixed(3);
+        const kMinus1 = (k - 1).toFixed(2);
+        const equationStr = `= ${k.toFixed(k < 0.1 ? 3 : 2)} × (${oneMinusG})^(${kMinus1}) = ${cs.toFixed(3)}`;
+        document.getElementById('equation-values').textContent = equationStr;
+    }
+
+    reset() {
+        this.fractionSolidified = 0;
+        this.lastTime = 0;
+        this.isPlaying = true;
+        document.getElementById('play-btn').textContent = 'Pause';
+        this.updateDisplay();
+        requestAnimationFrame(this.animate.bind(this));
+    }
+
+    animate(currentTime) {
+        if (!this.isPlaying) return;
+
+        // Calculate delta time
+        if (this.lastTime === 0) {
+            this.lastTime = currentTime;
+        }
+        const dt = (currentTime - this.lastTime) / 1000;
+        this.lastTime = currentTime;
+
+        // Update fraction solidified
+        // Full growth in ~10 seconds at 1x speed
+        this.fractionSolidified += dt * 0.1 * this.speed;
+
+        // Clamp and check for completion
+        if (this.fractionSolidified >= 0.98) {
+            this.fractionSolidified = 0.98;
+            this.isPlaying = false;
+            document.getElementById('play-btn').textContent = 'Play';
+        }
+
+        // Update display
+        this.updateDisplay();
+
+        // Render
+        this.czRenderer.render(this.fractionSolidified);
+        this.profileRenderer.render(this.fractionSolidified);
+
+        // Continue animation
+        if (this.isPlaying) {
+            requestAnimationFrame(this.animate.bind(this));
+        }
+    }
+}
+
+// Initialize app when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    window.app = new CZApp();
+});
+    </script>
+</body>
+</html>

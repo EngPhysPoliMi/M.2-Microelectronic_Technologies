@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Silicon Oxidation - Deal-Grove Model Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #eee;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1500px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 8px;
+            color: #00d4ff;
+            font-size: 1.8em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 20px;
+            font-size: 0.95em;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 300px 1fr 1fr;
+            gap: 20px;
+        }
+
+        .panel {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .section {
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 0.85em;
+            color: #00d4ff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid rgba(0,212,255,0.3);
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.85em;
+            color: #ccc;
+        }
+
+        .control-group select,
+        .control-group input[type="number"] {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+
+        .control-group select:focus,
+        .control-group input:focus {
+            outline: none;
+            border-color: #00d4ff;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 5px;
+        }
+
+        .radio-group label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .radio-group input[type="radio"] {
+            accent-color: #00d4ff;
+        }
+
+        .slider-with-input {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .slider-with-input .input-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .slider-with-input input[type="number"] {
+            width: 80px;
+            padding: 6px 8px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(0,0,0,0.3);
+            color: #00d4ff;
+            border-radius: 4px;
+            font-size: 0.9em;
+            font-family: monospace;
+        }
+
+        .slider-with-input .unit {
+            color: #888;
+            font-size: 0.85em;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .slider-container input[type="range"] {
+            flex: 1;
+            -webkit-appearance: none;
+            height: 6px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 3px;
+        }
+
+        .slider-container input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #00d4ff;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .calc-section {
+            background: rgba(0,212,255,0.1);
+            border: 1px solid rgba(0,212,255,0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .calc-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .calc-row input[type="number"] {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(0,0,0,0.3);
+            color: #00d4ff;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        .calc-row .unit {
+            display: flex;
+            align-items: center;
+            color: #888;
+            font-size: 0.85em;
+            min-width: 40px;
+        }
+
+        .calc-result {
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .calc-result .label {
+            font-size: 0.75em;
+            color: #888;
+            text-transform: uppercase;
+        }
+
+        .calc-result .value {
+            font-size: 1.2em;
+            color: #00d4ff;
+            font-family: monospace;
+            margin-top: 3px;
+        }
+
+        .btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: bold;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn-primary {
+            background: #00d4ff;
+            color: #1a1a2e;
+        }
+
+        .btn-primary:hover {
+            background: #00b8e6;
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: #eee;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .animation-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .animation-controls .btn {
+            flex: 1;
+            margin-top: 0;
+        }
+
+        /* Cross-section visualization */
+        .cross-section-container {
+            position: relative;
+            height: 350px;
+            background: #0a0a15;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        #crossSectionCanvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Plot */
+        #plotCanvas {
+            width: 100%;
+            height: 350px;
+            background: #0a0a15;
+            border-radius: 8px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .info-box {
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .info-box .label {
+            font-size: 0.7em;
+            color: #888;
+            text-transform: uppercase;
+        }
+
+        .info-box .value {
+            font-size: 0.95em;
+            color: #00d4ff;
+            font-family: monospace;
+            margin-top: 3px;
+        }
+
+        .equations-panel {
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 15px;
+            font-family: 'Times New Roman', serif;
+        }
+
+        .equations-panel h3 {
+            font-size: 0.8em;
+            color: #00d4ff;
+            margin-bottom: 8px;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .equation {
+            color: #ccc;
+            font-size: 0.9em;
+            margin: 6px 0;
+            padding: 6px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 4px;
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 10px;
+            justify-content: center;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8em;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+        }
+
+        .time-display {
+            text-align: center;
+            font-size: 1.1em;
+            color: #00d4ff;
+            margin-bottom: 10px;
+            font-family: monospace;
+        }
+
+        @media (max-width: 1200px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Thermal Oxidation of Silicon</h1>
+        <p class="subtitle">Deal-Grove Model Simulator</p>
+
+        <div class="main-layout">
+            <!-- Controls Panel -->
+            <div class="panel">
+                <div class="section">
+                    <div class="section-title">Process Parameters</div>
+
+                    <div class="control-group">
+                        <label>Temperature</label>
+                        <div class="slider-with-input">
+                            <div class="input-row">
+                                <input type="number" id="tempInput" min="700" max="1200" value="1000" step="1">
+                                <span class="unit">°C</span>
+                            </div>
+                            <div class="slider-container">
+                                <span style="font-size:0.75em;color:#666;">700</span>
+                                <input type="range" id="tempSlider" min="700" max="1200" value="1000" step="10">
+                                <span style="font-size:0.75em;color:#666;">1200</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Oxidizing Ambient</label>
+                        <div class="radio-group">
+                            <label>
+                                <input type="radio" name="ambient" value="dry" checked>
+                                Dry O₂
+                            </label>
+                            <label>
+                                <input type="radio" name="ambient" value="wet">
+                                Wet (H₂O)
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Silicon Orientation</label>
+                        <div class="radio-group">
+                            <label>
+                                <input type="radio" name="orientation" value="100" checked>
+                                (100)
+                            </label>
+                            <label>
+                                <input type="radio" name="orientation" value="111">
+                                (111)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Calculate</div>
+
+                    <div class="calc-section">
+                        <div class="control-group">
+                            <label>Input Mode</label>
+                            <div class="radio-group">
+                                <label>
+                                    <input type="radio" name="calcMode" value="time" checked>
+                                    Time → Thickness
+                                </label>
+                                <label>
+                                    <input type="radio" name="calcMode" value="thickness">
+                                    Thickness → Time
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="calc-row" id="timeInputRow">
+                            <input type="number" id="timeInput" min="0.1" max="1000" value="60" step="any">
+                            <span class="unit">min</span>
+                        </div>
+
+                        <div class="calc-row" id="thicknessInputRow" style="display:none;">
+                            <input type="number" id="thicknessInput" min="1" max="5000" value="100" step="any">
+                            <span class="unit">nm</span>
+                        </div>
+
+                        <button class="btn btn-primary" id="calculateBtn">Calculate</button>
+
+                        <div class="calc-result" style="margin-top: 10px;">
+                            <div class="label" id="resultLabel">Oxide Thickness</div>
+                            <div class="value" id="resultValue">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Animation</div>
+                    <div class="animation-controls">
+                        <button class="btn btn-primary" id="playBtn">▶ Play</button>
+                        <button class="btn btn-secondary" id="resetBtn">↺ Reset</button>
+                    </div>
+                    <div class="control-group" style="margin-top: 10px;">
+                        <label>Animation Speed</label>
+                        <div class="slider-container">
+                            <input type="range" id="speedSlider" min="1" max="10" value="5">
+                            <span style="color:#00d4ff;font-size:0.85em;" id="speedValue">5x</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-grid">
+                    <div class="info-box">
+                        <div class="label">B (parabolic)</div>
+                        <div class="value" id="bValue">-</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="label">B/A (linear)</div>
+                        <div class="value" id="baValue">-</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="label">Si Consumed</div>
+                        <div class="value" id="siConsumed">-</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="label">x²/B vs t</div>
+                        <div class="value" id="regimeIndicator">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cross-section Animation -->
+            <div class="panel">
+                <div class="section-title">Cross-Section View</div>
+                <div class="time-display">t = <span id="currentTime">0</span> min</div>
+                <div class="cross-section-container">
+                    <canvas id="crossSectionCanvas"></canvas>
+                </div>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #4a90d9;"></div>
+                        <span>SiO₂</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #6b6b6b;"></div>
+                        <span>Silicon</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: transparent; border: 2px dashed #ff6b6b;"></div>
+                        <span>Original Si Surface</span>
+                    </div>
+                </div>
+
+                <div class="equations-panel">
+                    <h3>Deal-Grove Model</h3>
+                    <div class="equation">x² + Ax = B(t + τ)</div>
+                    <div class="equation">x = (A/2)[√(1 + 4B(t+τ)/A²) - 1]</div>
+                    <div class="equation">Linear regime (thin): x ≈ (B/A)·t</div>
+                    <div class="equation">Parabolic regime (thick): x² ≈ B·t</div>
+                </div>
+            </div>
+
+            <!-- Thickness vs Time Plot -->
+            <div class="panel">
+                <div class="section-title">Oxide Thickness vs Time</div>
+                <div class="time-display">x = <span id="currentThickness">0</span> nm</div>
+                <canvas id="plotCanvas"></canvas>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #00d4ff;"></div>
+                        <span>Deal-Grove</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ff6b6b; opacity: 0.5;"></div>
+                        <span>Linear (B/A)·t</span>
+                    </div>
+                </div>
+
+                <div class="info-grid" style="margin-top:15px;">
+                    <div class="info-box">
+                        <div class="label">Current Thickness</div>
+                        <div class="value" id="thicknessDisplay">0 nm</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="label">Growth Rate</div>
+                        <div class="value" id="growthRate">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Physical constants
+        const kB = 8.617e-5; // Boltzmann constant in eV/K
+
+        // Deal-Grove parameters (from literature)
+        // B and B/A follow Arrhenius: value = C * exp(-Ea/kT)
+        // Units: B in μm²/hr, B/A in μm/hr
+        const oxidationParams = {
+            dry: {
+                '100': {
+                    B: { C: 7.72e2, Ea: 1.23 },      // μm²/hr
+                    BA: { C: 6.23e6, Ea: 2.00 }      // μm/hr (B/A)
+                },
+                '111': {
+                    B: { C: 7.72e2, Ea: 1.23 },
+                    BA: { C: 1.63e7, Ea: 2.00 }      // Higher for (111)
+                }
+            },
+            wet: {
+                '100': {
+                    B: { C: 3.86e2, Ea: 0.78 },
+                    BA: { C: 1.63e8, Ea: 2.05 }
+                },
+                '111': {
+                    B: { C: 3.86e2, Ea: 0.78 },
+                    BA: { C: 4.27e8, Ea: 2.05 }
+                }
+            }
+        };
+
+        // Silicon consumption ratio: 0.44 nm Si consumed per 1 nm SiO2 grown
+        const SI_CONSUMPTION_RATIO = 0.44;
+
+        // State variables
+        let isPlaying = false;
+        let animationTime = 0;
+        let animationId = null;
+        let maxTime = 60; // minutes
+        let crossSectionCanvas, crossSectionCtx;
+        let plotCanvas, plotCtx;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            crossSectionCanvas = document.getElementById('crossSectionCanvas');
+            crossSectionCtx = crossSectionCanvas.getContext('2d');
+            plotCanvas = document.getElementById('plotCanvas');
+            plotCtx = plotCanvas.getContext('2d');
+
+            setupEventListeners();
+            resizeCanvases();
+            updateParameters();
+            calculate();
+            draw();
+
+            window.addEventListener('resize', () => {
+                resizeCanvases();
+                draw();
+            });
+        });
+
+        function resizeCanvases() {
+            // Cross-section canvas
+            let rect = crossSectionCanvas.getBoundingClientRect();
+            crossSectionCanvas.width = rect.width * window.devicePixelRatio;
+            crossSectionCanvas.height = rect.height * window.devicePixelRatio;
+            crossSectionCtx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+            // Plot canvas
+            rect = plotCanvas.getBoundingClientRect();
+            plotCanvas.width = rect.width * window.devicePixelRatio;
+            plotCanvas.height = rect.height * window.devicePixelRatio;
+            plotCtx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        }
+
+        function setupEventListeners() {
+            // Temperature controls
+            document.getElementById('tempSlider').addEventListener('input', (e) => {
+                document.getElementById('tempInput').value = e.target.value;
+                updateParameters();
+                draw();
+            });
+
+            document.getElementById('tempInput').addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                if (val >= 700 && val <= 1200) {
+                    document.getElementById('tempSlider').value = val;
+                }
+                updateParameters();
+                draw();
+            });
+
+            // Ambient and orientation
+            document.querySelectorAll('input[name="ambient"], input[name="orientation"]').forEach(input => {
+                input.addEventListener('change', () => {
+                    updateParameters();
+                    draw();
+                });
+            });
+
+            // Calculation mode
+            document.querySelectorAll('input[name="calcMode"]').forEach(input => {
+                input.addEventListener('change', (e) => {
+                    const mode = e.target.value;
+                    document.getElementById('timeInputRow').style.display = mode === 'time' ? 'flex' : 'none';
+                    document.getElementById('thicknessInputRow').style.display = mode === 'thickness' ? 'flex' : 'none';
+                    document.getElementById('resultLabel').textContent = mode === 'time' ? 'Oxide Thickness' : 'Process Time';
+                });
+            });
+
+            // Calculate button
+            document.getElementById('calculateBtn').addEventListener('click', calculate);
+            document.getElementById('timeInput').addEventListener('change', calculate);
+            document.getElementById('thicknessInput').addEventListener('change', calculate);
+
+            // Animation controls
+            document.getElementById('playBtn').addEventListener('click', toggleAnimation);
+            document.getElementById('resetBtn').addEventListener('click', resetAnimation);
+
+            document.getElementById('speedSlider').addEventListener('input', (e) => {
+                document.getElementById('speedValue').textContent = e.target.value + 'x';
+            });
+        }
+
+        function getParameters() {
+            const temp = parseFloat(document.getElementById('tempInput').value) || 1000;
+            const ambient = document.querySelector('input[name="ambient"]:checked').value;
+            const orientation = document.querySelector('input[name="orientation"]:checked').value;
+            return { temp, ambient, orientation };
+        }
+
+        function calculateB(temp, ambient, orientation) {
+            const T = temp + 273.15;
+            const params = oxidationParams[ambient][orientation];
+            return params.B.C * Math.exp(-params.B.Ea / (kB * T)); // μm²/hr
+        }
+
+        function calculateBA(temp, ambient, orientation) {
+            const T = temp + 273.15;
+            const params = oxidationParams[ambient][orientation];
+            return params.BA.C * Math.exp(-params.BA.Ea / (kB * T)); // μm/hr
+        }
+
+        function calculateA(B, BA) {
+            return B / BA; // μm
+        }
+
+        // Calculate oxide thickness from time using Deal-Grove
+        // x = (A/2) * [sqrt(1 + 4B(t+τ)/A²) - 1]
+        function thicknessFromTime(t_min, B, A) {
+            const t_hr = t_min / 60; // Convert to hours
+            const tau = 0; // Initial oxide time offset (assuming no initial oxide)
+
+            if (A === 0) return Math.sqrt(B * (t_hr + tau));
+
+            const term = 1 + 4 * B * (t_hr + tau) / (A * A);
+            const x_um = (A / 2) * (Math.sqrt(term) - 1);
+            return x_um * 1000; // Convert to nm
+        }
+
+        // Calculate time from thickness using Deal-Grove
+        // t = (x² + Ax) / B - τ
+        function timeFromThickness(x_nm, B, A) {
+            const x_um = x_nm / 1000;
+            const tau = 0;
+            const t_hr = (x_um * x_um + A * x_um) / B - tau;
+            return t_hr * 60; // Convert to minutes
+        }
+
+        function updateParameters() {
+            const { temp, ambient, orientation } = getParameters();
+            const B = calculateB(temp, ambient, orientation);
+            const BA = calculateBA(temp, ambient, orientation);
+
+            // Display B in nm²/min for readability
+            const B_nm2_min = B * 1e6 / 60; // μm²/hr to nm²/min
+            const BA_nm_min = BA * 1000 / 60; // μm/hr to nm/min
+
+            document.getElementById('bValue').textContent = B_nm2_min.toExponential(2) + ' nm²/min';
+            document.getElementById('baValue').textContent = BA_nm_min.toFixed(2) + ' nm/min';
+        }
+
+        function calculate() {
+            const { temp, ambient, orientation } = getParameters();
+            const B = calculateB(temp, ambient, orientation);
+            const BA = calculateBA(temp, ambient, orientation);
+            const A = calculateA(B, BA);
+
+            const mode = document.querySelector('input[name="calcMode"]:checked').value;
+
+            if (mode === 'time') {
+                const t = parseFloat(document.getElementById('timeInput').value) || 60;
+                maxTime = t;
+                const thickness = thicknessFromTime(t, B, A);
+                document.getElementById('resultValue').textContent = thickness.toFixed(1) + ' nm';
+            } else {
+                const x = parseFloat(document.getElementById('thicknessInput').value) || 100;
+                const time = timeFromThickness(x, B, A);
+                maxTime = time;
+                document.getElementById('timeInput').value = time.toFixed(1);
+                document.getElementById('resultValue').textContent = time.toFixed(1) + ' min';
+            }
+
+            resetAnimation();
+            draw();
+        }
+
+        function draw() {
+            const { temp, ambient, orientation } = getParameters();
+            const B = calculateB(temp, ambient, orientation);
+            const BA = calculateBA(temp, ambient, orientation);
+            const A = calculateA(B, BA);
+
+            const currentTime = isPlaying ? animationTime : maxTime;
+            const thickness = thicknessFromTime(currentTime, B, A);
+
+            // Update displays
+            document.getElementById('currentTime').textContent = currentTime.toFixed(1);
+            document.getElementById('currentThickness').textContent = thickness.toFixed(1);
+            document.getElementById('thicknessDisplay').textContent = thickness.toFixed(1) + ' nm';
+
+            // Silicon consumed
+            const siConsumed = thickness * SI_CONSUMPTION_RATIO;
+            document.getElementById('siConsumed').textContent = siConsumed.toFixed(1) + ' nm';
+
+            // Regime indicator
+            const t_hr = currentTime / 60;
+            const x_um = thickness / 1000;
+            if (currentTime > 0 && thickness > 0) {
+                const x2_B = (x_um * x_um) / B; // hours
+                const ratio = x2_B / t_hr;
+                if (ratio < 0.3) {
+                    document.getElementById('regimeIndicator').textContent = 'Linear';
+                    document.getElementById('regimeIndicator').style.color = '#ff6b6b';
+                } else if (ratio > 0.7) {
+                    document.getElementById('regimeIndicator').textContent = 'Parabolic';
+                    document.getElementById('regimeIndicator').style.color = '#4ecdc4';
+                } else {
+                    document.getElementById('regimeIndicator').textContent = 'Transition';
+                    document.getElementById('regimeIndicator').style.color = '#ffe66d';
+                }
+            }
+
+            // Growth rate (dx/dt)
+            if (currentTime > 0) {
+                // dx/dt = B / (2x + A) in μm/hr
+                const dxdt_um_hr = B / (2 * x_um + A);
+                const dxdt_nm_min = dxdt_um_hr * 1000 / 60;
+                document.getElementById('growthRate').textContent = dxdt_nm_min.toFixed(2) + ' nm/min';
+            }
+
+            drawCrossSection(thickness);
+            drawPlot(currentTime, B, A, BA);
+        }
+
+        function drawCrossSection(thickness_nm) {
+            const width = crossSectionCanvas.width / window.devicePixelRatio;
+            const height = crossSectionCanvas.height / window.devicePixelRatio;
+
+            // Clear
+            crossSectionCtx.fillStyle = '#0a0a15';
+            crossSectionCtx.fillRect(0, 0, width, height);
+
+            // Scale: let's say max visible is 500nm oxide
+            const maxVisible = Math.max(500, thickness_nm * 1.5);
+            const scale = (height * 0.6) / maxVisible; // pixels per nm
+
+            const centerY = height * 0.4; // Original Si surface position
+            const siConsumed = thickness_nm * SI_CONSUMPTION_RATIO;
+
+            // Draw labels
+            crossSectionCtx.fillStyle = '#888';
+            crossSectionCtx.font = '11px Segoe UI';
+            crossSectionCtx.textAlign = 'left';
+            crossSectionCtx.fillText('Gas/Ambient', 20, 25);
+
+            // Draw oxide (above current Si surface, but extends above original surface too)
+            const oxideTop = centerY - (thickness_nm - siConsumed) * scale;
+            const oxideBottom = centerY + siConsumed * scale;
+            const oxideHeight = oxideBottom - oxideTop;
+
+            if (thickness_nm > 0) {
+                // Oxide gradient
+                const oxideGrad = crossSectionCtx.createLinearGradient(0, oxideTop, 0, oxideBottom);
+                oxideGrad.addColorStop(0, '#6ab0e8');
+                oxideGrad.addColorStop(1, '#3a80b8');
+                crossSectionCtx.fillStyle = oxideGrad;
+                crossSectionCtx.fillRect(50, oxideTop, width - 100, oxideHeight);
+
+                // Oxide label
+                crossSectionCtx.fillStyle = '#fff';
+                crossSectionCtx.font = 'bold 12px Segoe UI';
+                crossSectionCtx.textAlign = 'center';
+                crossSectionCtx.fillText('SiO₂', width / 2, (oxideTop + oxideBottom) / 2 + 4);
+
+                // Thickness annotation
+                crossSectionCtx.strokeStyle = '#fff';
+                crossSectionCtx.lineWidth = 1;
+                crossSectionCtx.beginPath();
+                crossSectionCtx.moveTo(width - 40, oxideTop);
+                crossSectionCtx.lineTo(width - 40, oxideBottom);
+                crossSectionCtx.stroke();
+
+                // Arrow heads
+                crossSectionCtx.beginPath();
+                crossSectionCtx.moveTo(width - 45, oxideTop + 5);
+                crossSectionCtx.lineTo(width - 40, oxideTop);
+                crossSectionCtx.lineTo(width - 35, oxideTop + 5);
+                crossSectionCtx.stroke();
+
+                crossSectionCtx.beginPath();
+                crossSectionCtx.moveTo(width - 45, oxideBottom - 5);
+                crossSectionCtx.lineTo(width - 40, oxideBottom);
+                crossSectionCtx.lineTo(width - 35, oxideBottom - 5);
+                crossSectionCtx.stroke();
+
+                crossSectionCtx.fillStyle = '#00d4ff';
+                crossSectionCtx.font = '10px monospace';
+                crossSectionCtx.textAlign = 'left';
+                crossSectionCtx.fillText(thickness_nm.toFixed(0) + ' nm', width - 35, (oxideTop + oxideBottom) / 2 + 3);
+            }
+
+            // Draw silicon (below oxide)
+            const siTop = oxideBottom;
+            const siGrad = crossSectionCtx.createLinearGradient(0, siTop, 0, height);
+            siGrad.addColorStop(0, '#5a5a5a');
+            siGrad.addColorStop(1, '#3a3a3a');
+            crossSectionCtx.fillStyle = siGrad;
+            crossSectionCtx.fillRect(50, siTop, width - 100, height - siTop);
+
+            // Silicon label
+            crossSectionCtx.fillStyle = '#ccc';
+            crossSectionCtx.font = 'bold 12px Segoe UI';
+            crossSectionCtx.textAlign = 'center';
+            crossSectionCtx.fillText('Silicon', width / 2, siTop + 30);
+
+            // Draw original Si surface line (dashed red)
+            crossSectionCtx.strokeStyle = '#ff6b6b';
+            crossSectionCtx.lineWidth = 2;
+            crossSectionCtx.setLineDash([8, 4]);
+            crossSectionCtx.beginPath();
+            crossSectionCtx.moveTo(50, centerY);
+            crossSectionCtx.lineTo(width - 50, centerY);
+            crossSectionCtx.stroke();
+            crossSectionCtx.setLineDash([]);
+
+            // Label original surface
+            crossSectionCtx.fillStyle = '#ff6b6b';
+            crossSectionCtx.font = '10px Segoe UI';
+            crossSectionCtx.textAlign = 'left';
+            crossSectionCtx.fillText('Original Si surface', 55, centerY - 5);
+
+            // Show Si consumed
+            if (siConsumed > 5) {
+                crossSectionCtx.strokeStyle = '#ff6b6b';
+                crossSectionCtx.lineWidth = 1;
+                crossSectionCtx.beginPath();
+                crossSectionCtx.moveTo(60, centerY);
+                crossSectionCtx.lineTo(60, centerY + siConsumed * scale);
+                crossSectionCtx.stroke();
+
+                crossSectionCtx.fillStyle = '#ff6b6b';
+                crossSectionCtx.font = '9px monospace';
+                crossSectionCtx.textAlign = 'left';
+                crossSectionCtx.fillText(siConsumed.toFixed(0) + ' nm Si', 65, centerY + siConsumed * scale / 2 + 3);
+                crossSectionCtx.fillText('consumed', 65, centerY + siConsumed * scale / 2 + 13);
+            }
+
+            // Draw O2/H2O molecules animating toward surface (simplified)
+            const ambient = document.querySelector('input[name="ambient"]:checked').value;
+            const symbol = ambient === 'dry' ? 'O₂' : 'H₂O';
+            crossSectionCtx.fillStyle = 'rgba(100, 200, 255, 0.7)';
+            crossSectionCtx.font = '10px Segoe UI';
+            for (let i = 0; i < 5; i++) {
+                const x = 80 + i * 60 + (Date.now() / 50 + i * 20) % 30;
+                const y = 40 + Math.sin(Date.now() / 500 + i) * 10;
+                crossSectionCtx.fillText(symbol, x, y);
+            }
+        }
+
+        function drawPlot(currentTime, B, A, BA) {
+            const width = plotCanvas.width / window.devicePixelRatio;
+            const height = plotCanvas.height / window.devicePixelRatio;
+
+            // Clear
+            plotCtx.fillStyle = '#0a0a15';
+            plotCtx.fillRect(0, 0, width, height);
+
+            const margin = { top: 30, right: 30, bottom: 50, left: 60 };
+            const plotWidth = width - margin.left - margin.right;
+            const plotHeight = height - margin.top - margin.bottom;
+
+            // Determine axis ranges
+            const tMax = maxTime * 1.1;
+            const xMax = thicknessFromTime(tMax, B, A) * 1.1;
+
+            // Draw grid
+            plotCtx.strokeStyle = 'rgba(255,255,255,0.1)';
+            plotCtx.lineWidth = 1;
+
+            for (let i = 0; i <= 5; i++) {
+                const x = margin.left + (i / 5) * plotWidth;
+                const y = margin.top + (i / 5) * plotHeight;
+
+                plotCtx.beginPath();
+                plotCtx.moveTo(x, margin.top);
+                plotCtx.lineTo(x, margin.top + plotHeight);
+                plotCtx.stroke();
+
+                plotCtx.beginPath();
+                plotCtx.moveTo(margin.left, y);
+                plotCtx.lineTo(margin.left + plotWidth, y);
+                plotCtx.stroke();
+            }
+
+            // Draw axes
+            plotCtx.strokeStyle = '#666';
+            plotCtx.lineWidth = 2;
+            plotCtx.beginPath();
+            plotCtx.moveTo(margin.left, margin.top);
+            plotCtx.lineTo(margin.left, margin.top + plotHeight);
+            plotCtx.lineTo(margin.left + plotWidth, margin.top + plotHeight);
+            plotCtx.stroke();
+
+            // Axis labels
+            plotCtx.fillStyle = '#ccc';
+            plotCtx.font = '11px Segoe UI';
+            plotCtx.textAlign = 'center';
+            plotCtx.fillText('Time (min)', margin.left + plotWidth / 2, height - 10);
+
+            plotCtx.save();
+            plotCtx.translate(15, margin.top + plotHeight / 2);
+            plotCtx.rotate(-Math.PI / 2);
+            plotCtx.fillText('Thickness (nm)', 0, 0);
+            plotCtx.restore();
+
+            // Tick labels
+            plotCtx.font = '10px Segoe UI';
+            for (let i = 0; i <= 5; i++) {
+                const t = (i / 5) * tMax;
+                const x = (i / 5) * xMax;
+                const px = margin.left + (i / 5) * plotWidth;
+                const py = margin.top + plotHeight - (i / 5) * plotHeight;
+
+                plotCtx.textAlign = 'center';
+                plotCtx.fillText(t.toFixed(0), px, margin.top + plotHeight + 15);
+
+                plotCtx.textAlign = 'right';
+                plotCtx.fillText(x.toFixed(0), margin.left - 8, py + 4);
+            }
+
+            // Helper function to convert to pixel coordinates
+            function toPixel(t, x) {
+                return {
+                    px: margin.left + (t / tMax) * plotWidth,
+                    py: margin.top + plotHeight - (x / xMax) * plotHeight
+                };
+            }
+
+            // Draw linear approximation (B/A * t)
+            plotCtx.strokeStyle = 'rgba(255, 107, 107, 0.5)';
+            plotCtx.lineWidth = 2;
+            plotCtx.setLineDash([5, 5]);
+            plotCtx.beginPath();
+            const linearSlope = BA * 1000 / 60; // nm/min
+            for (let i = 0; i <= 100; i++) {
+                const t = (i / 100) * tMax;
+                const x = linearSlope * t;
+                const { px, py } = toPixel(t, Math.min(x, xMax));
+                if (i === 0) plotCtx.moveTo(px, py);
+                else plotCtx.lineTo(px, py);
+            }
+            plotCtx.stroke();
+            plotCtx.setLineDash([]);
+
+            // Draw Deal-Grove curve
+            plotCtx.strokeStyle = '#00d4ff';
+            plotCtx.lineWidth = 3;
+            plotCtx.beginPath();
+            for (let i = 0; i <= 100; i++) {
+                const t = (i / 100) * tMax;
+                const x = thicknessFromTime(t, B, A);
+                const { px, py } = toPixel(t, x);
+                if (i === 0) plotCtx.moveTo(px, py);
+                else plotCtx.lineTo(px, py);
+            }
+            plotCtx.stroke();
+
+            // Draw current point
+            const currentX = thicknessFromTime(currentTime, B, A);
+            const { px: cpx, py: cpy } = toPixel(currentTime, currentX);
+
+            plotCtx.fillStyle = '#00d4ff';
+            plotCtx.beginPath();
+            plotCtx.arc(cpx, cpy, 6, 0, Math.PI * 2);
+            plotCtx.fill();
+
+            // Draw crosshairs to current point
+            plotCtx.strokeStyle = 'rgba(0, 212, 255, 0.3)';
+            plotCtx.lineWidth = 1;
+            plotCtx.setLineDash([3, 3]);
+            plotCtx.beginPath();
+            plotCtx.moveTo(cpx, margin.top + plotHeight);
+            plotCtx.lineTo(cpx, cpy);
+            plotCtx.lineTo(margin.left, cpy);
+            plotCtx.stroke();
+            plotCtx.setLineDash([]);
+        }
+
+        function toggleAnimation() {
+            const btn = document.getElementById('playBtn');
+            isPlaying = !isPlaying;
+
+            if (isPlaying) {
+                btn.textContent = '⏸ Pause';
+                animate();
+            } else {
+                btn.textContent = '▶ Play';
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                }
+            }
+        }
+
+        function animate() {
+            if (!isPlaying) return;
+
+            const speed = parseFloat(document.getElementById('speedSlider').value);
+            const timeStep = (maxTime / 500) * speed;
+
+            animationTime += timeStep;
+
+            if (animationTime >= maxTime) {
+                animationTime = maxTime;
+                isPlaying = false;
+                document.getElementById('playBtn').textContent = '▶ Play';
+            }
+
+            draw();
+
+            if (isPlaying) {
+                animationId = requestAnimationFrame(animate);
+            }
+        }
+
+        function resetAnimation() {
+            isPlaying = false;
+            animationTime = 0;
+            document.getElementById('playBtn').textContent = '▶ Play';
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            draw();
+        }
+    </script>
+</body>
+</html>
